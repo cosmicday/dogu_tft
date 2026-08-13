@@ -1,0 +1,19 @@
+{
+  "name": "dogu-tft",
+  "version": "0.1.0",
+  "private": true,
+  "description": "dogu.gg/tft — TFT 전적검색 (dogu_template 기반, BASE_PATH 서브패스 마운트)",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js",
+    "dev": "node --watch server/server.js",
+    "dev:root": "node -e \"process.env.BASE_PATH='';require('./server/server.js')\""
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "mongoose": "^8.9.5"
+  }
+}

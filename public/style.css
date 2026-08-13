@@ -1,0 +1,963 @@
+/* =========================================
+   1. 토큰 및 기본 설정
+   ========================================= */
+:root {
+    --bg: #0a0f1c;
+    --bg-header: rgba(15, 23, 42, 0.92);
+    --surface: #121a2e;
+    --surface-2: #1a2440;
+    --border: rgba(255, 255, 255, 0.10);
+    --text: #eceef5;
+    --text-dim: rgba(255, 255, 255, 0.62);
+    --text-faint: rgba(255, 255, 255, 0.36);
+    --accent: #eab765;
+    --accent-strong: #c9922e;
+    --danger: #f87171;
+    --radius: 12px;
+    --max-width: 1100px;
+
+    /* TFT 코스트 색 (1~5코) */
+    --cost-1: #6f7580;
+    --cost-2: #17a97a;
+    --cost-3: #2f7ddb;
+    --cost-4: #b23bd6;
+    --cost-5: #f0b232;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Pretendard', 'Malgun Gothic', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+        radial-gradient(900px 500px at 15% -10%, rgba(234, 183, 101, 0.14), transparent 60%),
+        radial-gradient(700px 400px at 90% 0%, rgba(56, 189, 248, 0.10), transparent 60%);
+    z-index: -1;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+code {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 1px 6px;
+    font-size: 13px;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shakeX {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-6px); }
+    40%, 80% { transform: translateX(6px); }
+}
+
+::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar-track { background: var(--surface); }
+::-webkit-scrollbar-thumb { background: var(--accent-strong); border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+/* =========================================
+   2. 헤더 · 네비게이션
+   ========================================= */
+.header {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    height: 62px;
+    padding: 0 24px;
+    background: var(--bg-header);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(8px);
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+}
+
+.logo-mark {
+    color: var(--accent);
+    filter: drop-shadow(0 0 6px rgba(167, 139, 250, 0.5));
+}
+
+.nav-menu {
+    display: flex;
+    gap: 26px;
+}
+
+.nav-item {
+    color: var(--text-dim);
+    font-size: 15px;
+    font-weight: 600;
+    padding: 6px 0;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
+}
+
+.nav-item:hover { color: var(--text); }
+
+.nav-item.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+}
+
+/* =========================================
+   3. 페이지 컨테이너
+   ========================================= */
+main {
+    max-width: var(--max-width);
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.page-container {
+    display: none;
+    padding: 44px 0 60px;
+    min-height: 60vh;
+    animation: fadeIn 0.35s ease;
+}
+
+.page-title {
+    font-size: 26px;
+    font-weight: 800;
+    margin-bottom: 10px;
+}
+
+.page-desc {
+    color: var(--text-dim);
+    font-size: 14px;
+    margin-bottom: 24px;
+}
+
+.page-doc h3 {
+    color: var(--accent);
+    font-size: 17px;
+    margin: 26px 0 8px;
+}
+
+.page-doc p {
+    color: var(--text-dim);
+    line-height: 1.85;
+    margin-bottom: 12px;
+}
+
+.text-link {
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.text-link:hover { text-decoration: underline; }
+
+.loading, .empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 70px 0;
+    color: var(--text-faint);
+    font-size: 14px;
+}
+
+/* =========================================
+   4. 홈 (히어로 · 검색 · 드롭다운 · 타이머)
+   ========================================= */
+.page-home { text-align: center; padding-top: 80px; }
+
+.hero-title {
+    font-size: 44px;
+    font-weight: 900;
+    letter-spacing: -1px;
+}
+
+.hero-sub {
+    margin-top: 10px;
+    color: var(--text-dim);
+    font-size: 15px;
+}
+
+.search-wrapper {
+    position: relative;
+    max-width: 560px;
+    margin: 36px auto 0;
+    text-align: left;
+}
+
+.search-box {
+    display: flex;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+    transition: border-color 0.15s;
+}
+
+.search-box:focus-within { border-color: var(--accent); }
+
+.search-box.shake { animation: shakeX 0.35s ease; }
+
+.search-input {
+    flex: 1;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--text);
+    font-size: 15px;
+    padding: 14px 20px;
+}
+
+.search-input::placeholder { color: var(--text-faint); }
+
+.search-btn {
+    border: 0;
+    background: var(--accent-strong);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 0 26px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.search-btn:hover { background: var(--accent); }
+
+.search-error {
+    display: none;
+    color: var(--danger);
+    font-size: 13px;
+    padding: 8px 20px 0;
+}
+
+.search-dropdown {
+    margin-top: 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+.dropdown-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+}
+
+.dropdown-tab {
+    color: var(--text-dim);
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.dropdown-tab.active { color: var(--accent); }
+
+.tab-divider { color: var(--text-faint); }
+
+.dropdown-hint {
+    margin-left: auto;
+    color: var(--text-faint);
+    font-size: 11px;
+}
+
+.dropdown-row {
+    display: flex;
+    align-items: center;
+    padding: 10px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.dropdown-row:last-child { border-bottom: 0; }
+
+.dropdown-link {
+    flex: 1;
+    font-size: 14px;
+    color: var(--text-dim);
+}
+
+.dropdown-link:hover { color: var(--accent); }
+
+.dropdown-del {
+    border: 0;
+    background: transparent;
+    color: var(--text-faint);
+    cursor: pointer;
+    font-size: 13px;
+    padding: 2px 6px;
+}
+
+.dropdown-del:hover { color: var(--danger); }
+
+.dropdown-empty {
+    padding: 26px;
+    text-align: center;
+    color: var(--text-faint);
+    font-size: 13px;
+}
+
+/* =========================================
+   5. 카드 목록 · 상세
+   ========================================= */
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
+}
+
+.card {
+    display: block;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    transition: transform 0.15s, border-color 0.15s;
+}
+
+.card:hover {
+    transform: translateY(-3px);
+    border-color: var(--accent);
+}
+
+.card-title { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+.card-desc { font-size: 13px; color: var(--text-dim); }
+
+.detail-head {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+}
+
+.fav-btn {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 7px 16px;
+}
+
+.fav-btn.on { color: #facc15; border-color: rgba(250, 204, 21, 0.4); }
+
+/* =========================================
+   6. 토스트
+   ========================================= */
+.toast {
+    position: fixed;
+    left: 50%;
+    top: 84px;
+    transform: translate(-50%, -18px);
+    background: rgba(20, 20, 34, 0.96);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 14px;
+    padding: 13px 22px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s, transform 0.25s;
+    z-index: 1000;
+    max-width: min(92vw, 520px);
+    text-align: center;
+}
+
+.toast.toast-show {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+
+/* =========================================
+   7. 푸터
+   ========================================= */
+.footer {
+    border-top: 1px solid var(--border);
+    padding: 34px 0 50px;
+    margin-top: 40px;
+    text-align: center;
+    color: var(--text-faint);
+    font-size: 12px;
+    line-height: 1.7;
+}
+
+.footer-links {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.footer-links a {
+    color: var(--accent);
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.footer-links a:hover { text-decoration: underline; }
+
+.sep { color: rgba(255, 255, 255, 0.18); }
+
+.footer-note { margin-top: 6px; word-break: keep-all; }
+
+/* =========================================
+   8. 모바일
+   ========================================= */
+@media (max-width: 768px) {
+    .header {
+        gap: 14px;
+        padding: 0 14px;
+        height: 56px;
+    }
+
+    .logo-text { display: none; }
+
+    .nav-menu {
+        gap: 16px;
+        overflow-x: auto;
+        white-space: nowrap;
+        scrollbar-width: none;
+    }
+
+    .nav-menu::-webkit-scrollbar { display: none; }
+
+    .nav-item { font-size: 14px; }
+
+    .page-home { padding-top: 48px; }
+
+    .hero-title { font-size: 32px; }
+
+    .card-grid { grid-template-columns: 1fr; }
+
+    .toast { top: auto; bottom: 24px; }
+}
+
+/* =========================================
+   9. TFT — 검색 자동완성
+   ========================================= */
+.search-suggest {
+    display: none;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 54px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    z-index: 50;
+    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5);
+}
+
+.suggest-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.suggest-row:last-child { border-bottom: 0; }
+.suggest-row:hover { background: var(--surface-2); }
+
+.suggest-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--surface-2);
+    flex: none;
+}
+
+.suggest-name { font-size: 14px; font-weight: 600; }
+
+.suggest-tier {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--text-faint);
+}
+
+/* =========================================
+   10. TFT — 소환사 프로필 · 리그 카드 · 통계
+   ========================================= */
+.stale-banner {
+    background: rgba(240, 178, 50, 0.12);
+    border: 1px solid rgba(240, 178, 50, 0.35);
+    border-radius: var(--radius);
+    color: var(--accent);
+    font-size: 13px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+}
+
+.error-box { text-align: center; padding: 70px 0; }
+.error-msg { color: var(--text-dim); font-size: 15px; margin-bottom: 18px; }
+
+.profile-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 22px;
+    margin-bottom: 14px;
+}
+
+.profile-icon {
+    width: 72px;
+    height: 72px;
+    border-radius: 14px;
+    border: 2px solid var(--accent);
+    background: var(--surface-2);
+    flex: none;
+}
+
+.profile-name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 22px;
+    font-weight: 800;
+}
+
+.profile-name .fav-btn {
+    font-size: 18px;
+    padding: 2px 8px;
+    line-height: 1;
+}
+
+.profile-meta {
+    margin-top: 6px;
+    color: var(--text-dim);
+    font-size: 13px;
+}
+
+.league-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.league-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+}
+
+.league-label {
+    color: var(--text-faint);
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.league-tier { font-size: 17px; font-weight: 800; }
+.league-lp { margin-top: 4px; font-size: 14px; color: var(--text-dim); }
+.league-record { margin-top: 4px; font-size: 12px; color: var(--text-faint); }
+
+.stats-strip {
+    display: flex;
+    gap: 26px;
+    flex-wrap: wrap;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 13px 20px;
+    margin-bottom: 18px;
+}
+
+.stat-item { display: flex; align-items: baseline; gap: 8px; }
+.stat-label { color: var(--text-faint); font-size: 12px; }
+.stat-value { font-size: 15px; font-weight: 800; }
+
+/* 티어 색 */
+.tier-IRON { color: #8d8d8d; }
+.tier-BRONZE { color: #b0764f; }
+.tier-SILVER { color: #9fadb8; }
+.tier-GOLD { color: #e5c356; }
+.tier-PLATINUM { color: #4fd0c0; }
+.tier-EMERALD { color: #3ec777; }
+.tier-DIAMOND { color: #6fb6f9; }
+.tier-MASTER { color: #b465e0; }
+.tier-GRANDMASTER { color: #ef4e4e; }
+.tier-CHALLENGER { color: #f4c874; }
+.tier-UNRANKED { color: var(--text-faint); }
+
+/* 초고속 모드 등급 색 */
+.rated-GRAY { color: #9aa0a6; }
+.rated-GREEN { color: #3ec777; }
+.rated-BLUE { color: #6fb6f9; }
+.rated-PURPLE { color: #b465e0; }
+.rated-ORANGE { color: #f0932b; }
+
+/* =========================================
+   11. TFT — 매치 리스트
+   ========================================= */
+.match-block { margin-bottom: 10px; }
+
+.match-row {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--text-faint);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+}
+
+.match-row:hover { background: var(--surface-2); }
+.match-row.pl-1 { border-left-color: #f4c874; }
+.match-row.pl-top4 { border-left-color: #5b9dd9; }
+.match-row.pl-bottom { border-left-color: rgba(255, 255, 255, 0.18); }
+
+.match-left { flex: none; width: 92px; }
+
+.match-place { font-size: 21px; font-weight: 900; }
+.match-row.pl-1 .match-place { color: #f4c874; }
+.match-row.pl-top4 .match-place { color: #6fb6f9; }
+.match-row.pl-bottom .match-place { color: var(--text-faint); }
+
+.match-queue { margin-top: 3px; font-size: 12px; font-weight: 700; color: var(--text-dim); }
+.match-time, .match-len { margin-top: 2px; font-size: 11px; color: var(--text-faint); }
+
+.match-main { flex: 1; min-width: 0; }
+
+.match-augments {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 7px;
+}
+
+.augment {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: var(--text-dim);
+}
+
+.augment-icon {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    background: var(--surface-2);
+}
+
+.match-traits {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+}
+
+.trait-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 999px;
+    padding: 2px 9px 2px 5px;
+    border: 1px solid transparent;
+}
+
+.trait-icon { width: 14px; height: 14px; }
+
+.trait-num {
+    font-size: 10px;
+    font-weight: 800;
+    opacity: 0.9;
+}
+
+.ts-bronze { background: rgba(160, 113, 94, 0.22); border-color: rgba(160, 113, 94, 0.5); color: #cf9f8c; }
+.ts-silver { background: rgba(192, 197, 204, 0.16); border-color: rgba(192, 197, 204, 0.45); color: #d5dae1; }
+.ts-gold { background: rgba(255, 212, 95, 0.15); border-color: rgba(255, 212, 95, 0.5); color: #ffd45f; }
+.ts-prism {
+    background: linear-gradient(90deg, rgba(255, 130, 190, 0.2), rgba(130, 200, 255, 0.2), rgba(180, 255, 170, 0.2));
+    border-color: rgba(220, 230, 255, 0.55);
+    color: #eef2ff;
+}
+
+.match-units {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+
+.unit {
+    position: relative;
+    width: 44px;
+    text-align: center;
+}
+
+.unit-stars {
+    height: 12px;
+    font-size: 9px;
+    letter-spacing: -1px;
+    line-height: 12px;
+}
+
+.unit-stars.tier-1 { color: rgba(255, 255, 255, 0.35); }
+.unit-stars.tier-2 { color: #c0c5cc; }
+.unit-stars.tier-3 { color: #ffd45f; }
+.unit-stars.tier-4 { color: #7ef3d0; }
+
+.unit-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    border: 2px solid var(--cost-1);
+    background: var(--surface-2);
+    object-fit: cover;
+    display: block;
+}
+
+.unit-icon-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    color: var(--text-dim);
+}
+
+.unit.cost-1 .unit-icon { border-color: var(--cost-1); }
+.unit.cost-2 .unit-icon { border-color: var(--cost-2); }
+.unit.cost-3 .unit-icon { border-color: var(--cost-3); }
+.unit.cost-4 .unit-icon { border-color: var(--cost-4); }
+.unit.cost-5 .unit-icon,
+.unit.cost-6 .unit-icon,
+.unit.cost-7 .unit-icon { border-color: var(--cost-5); }
+
+.unit-items {
+    display: flex;
+    justify-content: center;
+    gap: 1px;
+    height: 14px;
+    margin-top: 1px;
+}
+
+.unit-item {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    background: var(--surface-2);
+}
+
+.match-right {
+    flex: none;
+    text-align: right;
+    font-size: 12px;
+    color: var(--text-dim);
+}
+
+.match-lv { font-weight: 800; color: var(--text); }
+.match-dmg { margin-top: 3px; }
+
+.expand-caret {
+    margin-top: 5px;
+    color: var(--text-faint);
+    transition: transform 0.15s;
+}
+
+.match-row.expanded .expand-caret { transform: rotate(180deg); }
+
+/* 매치 상세 (8인 테이블) */
+.match-detail {
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid var(--border);
+    border-top: 0;
+    border-radius: 0 0 var(--radius) var(--radius);
+    padding: 6px 10px;
+}
+
+.detail-scroll { overflow-x: auto; }
+
+.detail-table, .rank-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.detail-table th, .rank-table th {
+    text-align: left;
+    color: var(--text-faint);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+}
+
+.detail-table td, .rank-table td {
+    padding: 7px 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.detail-table tr:last-child td, .rank-table tr:last-child td { border-bottom: 0; }
+
+.detail-row-me { background: rgba(234, 183, 101, 0.07); }
+
+.detail-place { font-weight: 900; }
+.detail-place.pl-1 { color: #f4c874; }
+.detail-place.pl-top4 { color: #6fb6f9; }
+.detail-place.pl-bottom { color: var(--text-faint); }
+
+.detail-name { font-weight: 600; }
+.detail-name:hover { color: var(--accent); }
+.detail-name-unknown { color: var(--text-faint); }
+
+.detail-num { color: var(--text-dim); font-variant-numeric: tabular-nums; }
+
+.detail-table .unit { width: 30px; }
+.detail-table .unit-icon { width: 30px; height: 30px; border-radius: 6px; border-width: 1.5px; }
+.detail-table .unit-stars { display: none; }
+.detail-table .unit-items { display: none; }
+
+.more-btn {
+    display: block;
+    margin: 18px auto 0;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--text);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 11px 34px;
+    transition: border-color 0.15s;
+}
+
+.more-btn:hover { border-color: var(--accent); }
+.more-btn:disabled { opacity: 0.5; cursor: default; }
+
+/* =========================================
+   12. TFT — 랭킹 페이지
+   ========================================= */
+.rank-filters {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+.rank-filter {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 7px 18px;
+}
+
+.rank-filter.active {
+    background: var(--accent-strong);
+    border-color: var(--accent-strong);
+    color: #fff;
+}
+
+.rank-table {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+.rank-no { color: var(--text-faint); font-weight: 800; width: 52px; }
+.rank-name { font-weight: 600; }
+.rank-name:hover { color: var(--accent); }
+.rank-name-pending { color: var(--text-faint); font-style: italic; }
+
+.tier-badge { font-size: 12px; font-weight: 800; }
+
+.rank-pager {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 18px;
+}
+
+.pager-btn {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    cursor: pointer;
+    font-size: 13px;
+    padding: 7px 14px;
+}
+
+.pager-btn:disabled { opacity: 0.35; cursor: default; }
+.pager-info { color: var(--text-dim); font-size: 13px; }
+
+/* =========================================
+   13. TFT — 모바일
+   ========================================= */
+@media (max-width: 768px) {
+    .league-cards { grid-template-columns: 1fr; }
+
+    .match-row {
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 12px 14px;
+    }
+
+    .match-left {
+        width: auto;
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+    }
+
+    .match-main { flex-basis: 100%; order: 3; }
+    .match-right {
+        margin-left: auto;
+        display: flex;
+        gap: 10px;
+        align-items: baseline;
+    }
+
+    .stats-strip { gap: 14px; padding: 12px 14px; }
+    .unit { width: 38px; }
+    .unit-icon { width: 38px; height: 38px; }
+}

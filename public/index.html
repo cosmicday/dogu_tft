@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>%SITE_NAME%</title>
+    <meta name="description" content="%SITE_NAME% - TFT(전략적 팀 전투) 전적검색. 최근 전적, 덱 구성, 시너지, 증강체, 챌린저 랭킹을 한눈에.">
+
+    <link rel="canonical" href="%SITE_URL%/">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="%SITE_NAME%">
+    <meta property="og:title" content="%SITE_NAME% - TFT 전적검색">
+    <meta property="og:url" content="%SITE_URL%/">
+    <meta property="og:image" content="%SITE_URL%/og.png">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <link rel="icon" href="%BASE%/favicon.svg?v=%V%">
+    <link rel="stylesheet" href="%BASE%/style.css?v=%V%">
+
+    <!-- 서버가 주입하는 런타임 설정. 모든 클라이언트 코드가 여기서 basePath를 읽는다. -->
+    <script>window.__APP_CONFIG__ = %APP_CONFIG%;</script>
+</head>
+
+<body>
+    <header class="header">
+        <a class="logo" href="%BASE%/" data-link>
+            <span class="logo-mark">⬡</span>
+            <span class="logo-text">%SITE_NAME%</span>
+        </a>
+        <!-- 네비게이션은 routes.js가 그린다. 라우트 추가 = 메뉴 추가 -->
+        <nav class="nav-menu" id="nav-menu"></nav>
+    </header>
+
+    <div id="toast" class="toast"></div>
+
+    <main>
+        <!-- ==================================================
+             홈 — 히어로 + 검색 + 즐겨찾기/최근기록
+             ================================================== -->
+        <section class="page-container page-home" id="page-home">
+            <div class="hero">
+                <h1 class="hero-title">%SITE_NAME%</h1>
+                <p class="hero-sub">TFT 전적검색 — 최근 전적 · 덱 구성 · 시너지 · 랭킹</p>
+            </div>
+
+            <div class="search-wrapper">
+                <div class="search-box" id="search-box">
+                    <input type="text" class="search-input" id="search-input"
+                           placeholder="소환사명#태그 (예: Hide on bush#KR1)" autocomplete="off">
+                    <button class="search-btn" id="search-btn" type="button">검색</button>
+                </div>
+                <div class="search-error" id="search-error"></div>
+
+                <!-- 입력 중 자동완성 (Mongo에 축적된 소환사) -->
+                <div class="search-suggest" id="search-suggest"></div>
+
+                <div class="search-dropdown" id="search-dropdown">
+                    <div class="dropdown-header">
+                        <span class="dropdown-tab active" data-tab="favorites">★ 즐겨찾기</span>
+                        <span class="tab-divider">|</span>
+                        <span class="dropdown-tab" data-tab="recents">🕘 최근검색</span>
+                        <span class="dropdown-hint">각각 10개까지 저장됩니다.</span>
+                    </div>
+                    <div class="dropdown-list" id="dropdown-list"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================================================
+             소환사 전적 페이지
+             ================================================== -->
+        <section class="page-container" id="page-summoner">
+            <div id="summoner-body"></div>
+        </section>
+
+        <!-- ==================================================
+             랭킹 페이지
+             ================================================== -->
+        <section class="page-container" id="page-ranking">
+            <h2 class="page-title">랭킹</h2>
+            <p class="page-desc" id="ranking-updated">KR 서버 랭크 TFT 상위 랭커 (10분마다 갱신)</p>
+            <div id="ranking-body"></div>
+        </section>
+
+        <!-- ==================================================
+             약관 / 개인정보 / 404
+             ================================================== -->
+        <section class="page-container page-doc" id="page-terms">
+            <h2 class="page-title">이용약관</h2>
+
+            <h3>제1조 (목적)</h3>
+            <p>본 약관은 <b>%SITE_NAME%</b>(이하 '본 사이트')가 제공하는 서비스의 이용 조건 및 제반 사항을 규정함을 목적으로 합니다.</p>
+
+            <h3>제2조 (권리 고지)</h3>
+            <p>본 사이트는 Riot Games가 보증하지 않으며, Riot Games 또는 리그 오브 레전드 및 전략적 팀 전투(TFT) 제작·관리에 공식적으로 관여하는 어느 누구의 견해나 의견도 반영하지 않습니다. 리그 오브 레전드, 전략적 팀 전투 및 Riot Games는 Riot Games, Inc.의 상표 또는 등록 상표입니다.</p>
+
+            <h3>제3조 (서비스의 제공 및 변경)</h3>
+            <p>본 사이트는 운영 상황에 따라 서비스를 사전 예고 없이 지연, 변경 또는 중단할 수 있으며, 이로 인해 발생하는 이용자의 불편에 대해 법적 책임을 지지 않습니다.</p>
+
+            <h3>제4조 (이용자의 의무)</h3>
+            <p>이용자는 비정상적인 접근(매크로, 봇 등)으로 서버에 과도한 부하를 주거나, 제공되는 데이터를 무단 가공·재배포해서는 안 됩니다.</p>
+
+            <h3>제5조 (면책 조항)</h3>
+            <p>본 사이트가 제공하는 데이터는 Riot Games API를 통해 자동 처리되므로 완벽한 정확성을 보증하지 않으며, 이를 근거로 한 이용자의 판단에 대한 책임은 본인에게 있습니다.</p>
+        </section>
+
+        <section class="page-container page-doc" id="page-privacy">
+            <h2 class="page-title">개인정보 처리방침</h2>
+            <p><b>%SITE_NAME%</b>(이하 '본 사이트')는 이용자의 개인정보를 중요시하며 안전하게 보호하기 위해 최선을 다하고 있습니다.</p>
+
+            <h3>1. 수집하는 개인정보 항목</h3>
+            <p>본 사이트는 회원가입 절차가 없으며, 이메일·연락처·결제 정보 등 개인 식별 정보를 일절 수집하지 않습니다. 검색된 소환사명은 서비스 제공(전적 캐시, 자동완성)을 위해서만 저장됩니다.</p>
+
+            <h3>2. 쿠키 및 로컬 저장소 운용</h3>
+            <p>이용자 편의(최근 검색, 즐겨찾기 등)를 위해 브라우저 로컬 저장소(Local Storage)를 최소한으로 사용합니다. 이는 개인을 식별할 수 있는 정보가 아니며, 브라우저 설정에서 언제든 삭제할 수 있습니다.</p>
+
+            <h3>3. 제3자 제공 및 위탁</h3>
+            <p>본 사이트는 어떠한 정보도 영리 목적으로 제3자에게 제공하거나 외부에 위탁하지 않습니다.</p>
+
+            <h3>4. 문의</h3>
+            <p>건의사항, 버그 리포트 또는 개인정보 처리방침 관련 문의는 <b>%CONTACT_EMAIL%</b> 로 연락해 주시기 바랍니다.</p>
+        </section>
+
+        <section class="page-container page-doc" id="page-notfound">
+            <h2 class="page-title">404</h2>
+            <p>요청하신 페이지를 찾을 수 없습니다.</p>
+            <p><a href="%BASE%/" data-link class="text-link">홈으로 돌아가기</a></p>
+        </section>
+
+        <footer class="footer">
+            <div class="footer-links">
+                <a href="%BASE%/terms" data-link>이용약관</a>
+                <span class="sep">|</span>
+                <a href="%BASE%/privacy" data-link>개인정보 처리방침</a>
+                <span class="sep">|</span>
+                <a href="#" id="contact-link">버그제보 및 피드백</a>
+            </div>
+            <div class="footer-note">
+                %SITE_NAME% is not endorsed by Riot Games and does not reflect the views or opinions of Riot Games
+                or anyone officially involved in producing or managing Riot Games properties. Riot Games and
+                Teamfight Tactics are trademarks or registered trademarks of Riot Games, Inc.
+            </div>
+            <div class="footer-note">
+                Contact: <span id="contact-email">%CONTACT_EMAIL%</span>
+            </div>
+        </footer>
+    </main>
+
+    <script src="%BASE%/js/base.js?v=%V%"></script>
+    <script src="%BASE%/js/ui.js?v=%V%"></script>
+    <script src="%BASE%/js/store.js?v=%V%"></script>
+    <script src="%BASE%/js/api.js?v=%V%"></script>
+    <script src="%BASE%/js/router.js?v=%V%"></script>
+    <script src="%BASE%/js/routes.js?v=%V%"></script>
+    <script src="%BASE%/js/tft.js?v=%V%"></script>
+    <script src="%BASE%/js/app.js?v=%V%"></script>
+</body>
+
+</html>
