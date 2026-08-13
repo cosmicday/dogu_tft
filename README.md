@@ -13,6 +13,14 @@ npm run dev:root   # http://localhost:3000/      (루트 마운트 점검용)
 
 배포 시작 명령은 `npm start`. 헬스체크는 `GET /tft/healthz`.
 
+## 배포
+
+- GitHub: https://github.com/cosmicday/dogu_tft — `master`에 push하면 Railway가 자동배포
+- Railway: 프로젝트 `dogu_tft` / 서비스 `dogu-tft`, 도메인 https://dogu-tft-production.up.railway.app
+- Cloudflare에서 `dogu.gg/tft*`를 위 Railway 도메인으로 라우팅 (pixlol.kr과 같은 방식)
+- 주의: Git Bash에서 `railway variables --set "BASE_PATH=/tft"`를 치면 MSYS 경로 변환이
+  값을 `C:/Program Files/Git/tft`로 바꿔 버린다. Railway 변수는 PowerShell이나 대시보드에서 만질 것.
+
 ## Riot API 키 (중요)
 
 TFT는 pixlol(LoL)의 영구 키가 **안 먹힌다**. 24시간마다 만료되는
