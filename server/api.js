@@ -205,6 +205,132 @@ async function resolveNamesInBackground() {
 }
 
 // ------------------------------------------------------------
+// 메타 통계 — 랭커 매치 수집 + 유닛/시너지/아이템 집계
+//   상위 랭커의 랭크 매치를 5분마다 조금씩 MatchCache에 쌓고(개발 키 한도에
+//   맞춰 사이클당 최대 5매치), 30분마다 Mongo 집계로 통계를 갱신한다.
+//   덱(조합) 티어까지는 표본이 모자라므로 유닛/시너지/아이템 단위만 낸다.
+// ------------------------------------------------------------
+let metaStats = null;      // { updatedAt, sample, setNumber, units, traits, items }
+let crawlCursor = 0;
+
+async function crawlRankedMatches() {
+    if (isPaused() || !isDbReady() || rankingPlayers.length === 0) return;
+
+    const pool = rankingPlayers.slice(0, 300).filter(p => p.puuid);
+    if (!pool.length) return;
+    const target = pool[crawlCursor % pool.length];
+    crawlCursor++;
+
+    try {
+        const ids = await api.matchIdsByPuuid(target.puuid, 0, 5);
+        const known = await MatchCache.find({ matchId: { $in: ids } }, { matchId: 1 }).lean();
+        const knownSet = new Set(known.map(d => d.matchId));
+        const toFetch = ids.filter(id => !knownSet.has(id));
+
+        let added = 0;
+        for (const id of toFetch) {
+            if (isPaused()) break;
+            try {
+                const detail = await api.matchById(id);
+                await MatchCache.create({ matchId: id, detail }).catch(() => { });
+                added++;
+            } catch (e) {
+                if (e.status === 429) break;
+            }
+            await sleep(2000);
+        }
+        if (added > 0) console.log(`[Task] 메타 수집: 매치 ${added}개 추가 (${target.tier} ${target.lp}LP 랭커)`);
+    } catch (e) { /* 다음 사이클에 다른 랭커로 재시도 */ }
+}
+
+async function refreshMetaStats() {
+    if (!isDbReady()) return;
+    try {
+        // 라이브 세트 번호는 하드코딩하지 않고, 쌓인 랭크 매치에서 다수결로 정한다.
+        // (CDragon latest에는 선행 세트가 미리 들어와서 정적 데이터 기준은 못 쓴다)
+        const setCounts = await MatchCache.aggregate([
+            { $match: { 'detail.info.queue_id': 1100 } },
+            { $group: { _id: '$detail.info.tft_set_number', n: { $sum: 1 } } },
+            { $sort: { n: -1 } }, { $limit: 1 }
+        ]);
+        if (!setCounts.length) return;
+        const setNumber = setCounts[0]._id;
+        const sample = setCounts[0].n;
+
+        const base = [
+            { $match: { 'detail.info.queue_id': 1100, 'detail.info.tft_set_number': setNumber } },
+            { $sort: { createdAt: -1 } },
+            { $limit: 3000 },
+            { $project: { parts: '$detail.info.participants' } },
+            { $unwind: '$parts' }
+        ];
+        const acc = {
+            games: { $sum: 1 },
+            sumP: { $sum: '$parts.placement' },
+            top4: { $sum: { $cond: [{ $lte: ['$parts.placement', 4] }, 1, 0] } },
+            wins: { $sum: { $cond: [{ $eq: ['$parts.placement', 1] }, 1, 0] } }
+        };
+
+        const [unitAgg, unitItemAgg, traitAgg, itemAgg] = await Promise.all([
+            MatchCache.aggregate([...base,
+                { $unwind: '$parts.units' },
+                { $group: { _id: '$parts.units.character_id', ...acc } }
+            ]),
+            MatchCache.aggregate([...base,
+                { $unwind: '$parts.units' },
+                { $unwind: '$parts.units.itemNames' },
+                { $group: { _id: { u: '$parts.units.character_id', i: '$parts.units.itemNames' }, n: { $sum: 1 } } }
+            ]),
+            MatchCache.aggregate([...base,
+                { $unwind: '$parts.traits' },
+                { $match: { 'parts.traits.tier_current': { $gt: 0 } } },
+                { $group: { _id: '$parts.traits.name', ...acc } }
+            ]),
+            MatchCache.aggregate([...base,
+                { $unwind: '$parts.units' },
+                { $unwind: '$parts.units.itemNames' },
+                { $group: { _id: '$parts.units.itemNames', ...acc } }
+            ])
+        ]);
+
+        // 유닛별 인기 아이템 상위 3개
+        const topItemsByUnit = {};
+        for (const row of unitItemAgg) {
+            (topItemsByUnit[row._id.u] = topItemsByUnit[row._id.u] || []).push({ item: row._id.i, n: row.n });
+        }
+        for (const u of Object.keys(topItemsByUnit)) {
+            topItemsByUnit[u] = topItemsByUnit[u].sort((a, b) => b.n - a.n).slice(0, 3).map(x => x.item);
+        }
+
+        const boards = sample * 8;   // 매치당 8보드 기준 픽률 분모
+        const minGames = Math.max(5, Math.round(boards * 0.005));
+        const shape = (rows) => rows
+            .filter(r => r._id && r.games >= minGames)
+            .map(r => ({
+                id: r._id,
+                games: r.games,
+                pickRate: boards > 0 ? r.games / boards : 0,
+                avgPlacement: r.sumP / r.games,
+                top4Rate: r.top4 / r.games,
+                winRate: r.wins / r.games
+            }))
+            .sort((a, b) => a.avgPlacement - b.avgPlacement);
+
+        metaStats = {
+            updatedAt: Date.now(),
+            sample,
+            setNumber,
+            units: shape(unitAgg).map(u => ({ ...u, items: topItemsByUnit[u.id] || [] })),
+            traits: shape(traitAgg),
+            items: shape(itemAgg).slice(0, 120)
+        };
+        console.log(`[Task] 메타 통계 갱신 — 세트 ${setNumber}, 표본 ${sample}게임, 유닛 ${metaStats.units.length} / 시너지 ${metaStats.traits.length} / 아이템 ${metaStats.items.length}`);
+    } catch (err) {
+        console.error(`[Task] 메타 통계 집계 실패: ${err.message}`);
+    }
+}
+
+// ------------------------------------------------------------
 // 매치 상세 조회 (Mongo 캐시 우선, 신규만 Riot 호출)
 // ------------------------------------------------------------
 async function getMatchDetails(matchIds) {
@@ -385,7 +511,17 @@ router.get('/search/:riotId', async (req, res) => {
     if (!gameName) return res.status(400).json({ error: '닉네임을 입력해주세요. (예: 닉네임#KR1)' });
 
     const cacheKey = `search:${gameName.toLowerCase()}#${tagLine.toLowerCase()}`;
-    const cached = cacheGet(cacheKey);
+
+    // 전적 갱신: ?refresh=1 이면 캐시를 건너뛰되, IP당 30초 쿨다운을 둔다
+    let skipCache = req.query.refresh === '1';
+    if (skipCache) {
+        const ip = req.ip || 'unknown';
+        const last = cacheGet(`refresh:${ip}`);
+        if (last) skipCache = false;
+        else cacheSet(`refresh:${ip}`, 1, 30 * 1000);
+    }
+
+    const cached = skipCache ? null : cacheGet(cacheKey);
     if (cached) {
         console.log(`[API] 검색 캐시 적중: ${gameName}#${tagLine}`);
         return res.json(cached);
@@ -534,6 +670,15 @@ router.get('/autocomplete', async (req, res) => {
     }
 });
 
+// 메타 통계 (유닛/시너지/아이템 — 랭커 랭크 매치 집계)
+router.get('/stats', (req, res) => {
+    if (!metaStats) {
+        return res.json({ building: true, sample: 0, units: [], traits: [], items: [] });
+    }
+    res.set('Cache-Control', 'public, max-age=300');
+    res.json(metaStats);
+});
+
 // 정적 데이터 (챔피언/특성/아이템/증강)
 router.get('/static', (req, res) => {
     const data = getStatic();
@@ -553,6 +698,12 @@ async function startRiotJobs() {
 
     setInterval(updateRanking, 10 * 60 * 1000);
     setInterval(resolveNamesInBackground, 90 * 1000);
+
+    // 메타 통계: 수집은 5분 주기(사이클당 최대 6콜), 집계는 30분 주기
+    refreshMetaStats();
+    setInterval(crawlRankedMatches, 5 * 60 * 1000);
+    setInterval(refreshMetaStats, 30 * 60 * 1000);
+    setTimeout(crawlRankedMatches, 30 * 1000);   // 첫 수집은 부팅 30초 뒤
 }
 
 module.exports = { router, startRiotJobs };

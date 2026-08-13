@@ -961,3 +961,129 @@ main {
     .unit { width: 38px; }
     .unit-icon { width: 38px; height: 38px; }
 }
+
+/* =========================================
+   14. TFT — 전적 갱신 · 등수 그래프 · 큐 필터
+   ========================================= */
+.refresh-btn {
+    margin-left: auto;
+    background: var(--accent-strong);
+    border: 0;
+    border-radius: 999px;
+    color: #fff;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 9px 20px;
+    transition: background 0.15s;
+    flex: none;
+}
+
+.refresh-btn:hover { background: var(--accent); }
+.refresh-btn:disabled { opacity: 0.55; cursor: default; }
+
+.match-filters { margin: 0 0 14px; }
+
+.pg-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 13px 18px 8px;
+    margin-bottom: 14px;
+}
+
+.pg-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+}
+
+.pg-hint {
+    font-weight: 400;
+    font-size: 11px;
+    color: var(--text-faint);
+    margin-left: 6px;
+}
+
+.pg-scroll { overflow-x: auto; }
+
+.pg-line {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 2;
+    stroke-linejoin: round;
+    opacity: 0.75;
+}
+
+.pg-guide {
+    stroke: rgba(255, 255, 255, 0.08);
+    stroke-width: 1;
+    stroke-dasharray: 3 4;
+}
+
+.pg-label {
+    fill: var(--text-faint);
+    font-size: 9px;
+}
+
+.pg-dot { stroke: var(--bg); stroke-width: 1.5; }
+.pg-dot-1 { fill: #f4c874; }
+.pg-dot-top4 { fill: #6fb6f9; }
+.pg-dot-bottom { fill: #5a6272; }
+
+/* =========================================
+   15. TFT — 통계 페이지
+   ========================================= */
+.stats-sort {
+    margin-left: auto;
+    display: inline-flex;
+    gap: 8px;
+}
+
+.stats-name {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-weight: 600;
+}
+
+.stats-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    border: 2px solid var(--cost-1);
+}
+
+.stats-name.cost-1 .stats-icon { border-color: var(--cost-1); }
+.stats-name.cost-2 .stats-icon { border-color: var(--cost-2); }
+.stats-name.cost-3 .stats-icon { border-color: var(--cost-3); }
+.stats-name.cost-4 .stats-icon { border-color: var(--cost-4); }
+.stats-name.cost-5 .stats-icon,
+.stats-name.cost-6 .stats-icon,
+.stats-name.cost-7 .stats-icon { border-color: var(--cost-5); }
+
+.stats-trait-icon {
+    width: 22px;
+    height: 22px;
+    background: var(--surface-2);
+    border-radius: 50%;
+    padding: 3px;
+}
+
+.stats-item-icon {
+    width: 26px;
+    height: 26px;
+    border-radius: 5px;
+}
+
+.stats-items { display: flex; gap: 3px; }
+.stats-items .unit-item { width: 22px; height: 22px; }
+
+.stats-avg { font-weight: 800; color: var(--text); }
+
+.stats-note {
+    margin-top: 12px;
+    font-size: 12px;
+    color: var(--text-faint);
+}

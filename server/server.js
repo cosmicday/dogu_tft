@@ -84,7 +84,7 @@ router.get('/robots.txt', (req, res) => {
 });
 
 router.get('/sitemap.xml', (req, res) => {
-    const paths = ['/', '/ranking', '/terms', '/privacy'];
+    const paths = ['/', '/ranking', '/stats', '/terms', '/privacy'];
     const urls = paths
         .map(p => '  <url><loc>' + config.SITE_URL + (p === '/' ? '/' : p) + '</loc></url>')
         .join('\n');

@@ -43,6 +43,16 @@
             inNav: true,
             onEnter: page('ranking')
         },
+        {
+            id: 'stats',
+            path: '/stats',
+            page: 'page-stats',
+            nav: 'nav-stats',
+            label: '통계',
+            title: '통계',
+            inNav: true,
+            onEnter: page('stats')
+        },
         { id: 'terms', path: '/terms', page: 'page-terms', title: '이용약관', onEnter: page('doc') },
         { id: 'privacy', path: '/privacy', page: 'page-privacy', title: '개인정보 처리방침', onEnter: page('doc') },
         { id: 'notfound', path: '/__notfound', page: 'page-notfound', title: '404', notFound: true }

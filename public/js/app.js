@@ -136,6 +136,63 @@
             '<div class="stat-item"><span class="stat-label">순방률</span><span class="stat-value">' + Math.round(top4 / games * 100) + '%</span></div>';
     }
 
+    // 큐 필터 (매치 리스트 · 요약 · 그래프에 공통 적용)
+    var QUEUE_FILTERS = [
+        { key: 'ALL', label: '전체' },
+        { key: 1100, label: '랭크' },
+        { key: 1090, label: '일반' },
+        { key: 1160, label: '더블 업' },
+        { key: 1130, label: '초고속' }
+    ];
+
+    function filteredHistory() {
+        if (!summonerState) return [];
+        if (summonerState.filter === 'ALL') return summonerState.history;
+        return summonerState.history.filter(function (e) { return e.queueId === summonerState.filter; });
+    }
+
+    function queueFilterHtml() {
+        var current = summonerState ? summonerState.filter : 'ALL';
+        return '<div class="rank-filters match-filters">' + QUEUE_FILTERS.map(function (f) {
+            return '<button class="rank-filter' + (current === f.key ? ' active' : '') +
+                '" type="button" data-qf="' + f.key + '">' + f.label + '</button>';
+        }).join('') + '</div>';
+    }
+
+    // 최근 등수 추이 그래프 (최신 20게임, 왼쪽이 과거)
+    function placementGraphHtml(history) {
+        var recent = history.slice(0, 20).reverse();
+        if (recent.length < 2) return '';
+
+        var step = 30, padX = 14, padY = 12, plotH = 70;
+        var w = padX * 2 + (recent.length - 1) * step;
+        var h = padY * 2 + plotH;
+
+        function x(i) { return padX + i * step; }
+        function y(p) { return padY + (p - 1) / 7 * plotH; }
+
+        var points = recent.map(function (e, i) { return x(i) + ',' + y(e.me.placement); }).join(' ');
+
+        var dots = recent.map(function (e, i) {
+            var cls = e.me.placement === 1 ? 'pg-dot-1' : (e.me.placement <= 4 ? 'pg-dot-top4' : 'pg-dot-bottom');
+            return '<circle class="pg-dot ' + cls + '" cx="' + x(i) + '" cy="' + y(e.me.placement) + '" r="4">' +
+                '<title>' + tft.placementLabel(e.me.placement) + ' · ' + esc(tft.queueName(e.queueId, e.gameType)) + '</title></circle>';
+        }).join('');
+
+        var guides = [1, 4, 8].map(function (p) {
+            return '<line class="pg-guide" x1="' + padX + '" y1="' + y(p) + '" x2="' + (w - padX) + '" y2="' + y(p) + '"></line>' +
+                '<text class="pg-label" x="2" y="' + (y(p) + 3) + '">' + p + '</text>';
+        }).join('');
+
+        return '<div class="pg-card">' +
+            '<div class="pg-title">등수 추이 <span class="pg-hint">최근 ' + recent.length + '게임 · 왼쪽이 과거</span></div>' +
+            '<div class="pg-scroll"><svg class="pg-svg" viewBox="0 0 ' + w + ' ' + h + '" width="' + w + '" height="' + h + '">' +
+            guides +
+            '<polyline class="pg-line" points="' + points + '"></polyline>' +
+            dots +
+            '</svg></div></div>';
+    }
+
     function leagueCardHtml(label, q, isTurbo) {
         var body;
         if (!q) {
@@ -206,17 +263,37 @@
             '<tbody>' + rows + '</tbody></table></div>';
     }
 
+    // 요약 · 그래프 · 큐 필터 · 매치 리스트 (필터가 바뀔 때마다 통째로 다시 그린다)
+    function renderMatchArea() {
+        var area = document.getElementById('match-area');
+        if (!area || !summonerState) return;
+
+        var shown = filteredHistory();
+        area.innerHTML =
+            '<div class="stats-strip" id="stats-strip">' + (statsStripHtml(shown) || '<span class="stat-label">해당 큐의 게임이 없습니다.</span>') + '</div>' +
+            placementGraphHtml(shown) +
+            queueFilterHtml() +
+            '<div class="match-list" id="match-list">' +
+            (shown.length
+                ? shown.map(matchRowHtml).join('')
+                : '<div class="empty">해당하는 전적이 없습니다.</div>') +
+            '</div>' +
+            (summonerState.hasMore ? '<button class="more-btn" type="button" id="more-btn">전적 더 보기</button>' : '');
+    }
+
     function renderSummoner(data) {
         var body = document.getElementById('summoner-body');
         if (!body) return;
 
+        var prevFilter = summonerState ? summonerState.filter : 'ALL';
         summonerState = {
             puuid: data.puuid,
             name: data.profile.name,
             history: data.history.slice(),
             nextStart: data.history.length,
             hasMore: data.history.length >= 10 && !data.stale,
-            loadingMore: false
+            loadingMore: false,
+            filter: prevFilter
         };
 
         var starred = favorites.has({ id: data.profile.name });
@@ -236,21 +313,47 @@
             (data.profile.serverRank ? ' · KR 랭킹 ' + Number(data.profile.serverRank).toLocaleString() + '위' : '') +
             '</div>' +
             '</div>' +
+            '<button class="refresh-btn" type="button" id="refresh-btn" title="캐시를 건너뛰고 최신 전적을 불러옵니다">전적 갱신</button>' +
             '</div>' +
             '<div class="league-cards">' +
             leagueCardHtml('랭크', data.queues.RANKED_TFT, false) +
             leagueCardHtml('더블 업', data.queues.RANKED_TFT_DOUBLE_UP, false) +
             leagueCardHtml('초고속 모드', data.queues.RANKED_TFT_TURBO, true) +
             '</div>' +
-            '<div class="stats-strip" id="stats-strip">' + statsStripHtml(summonerState.history) + '</div>' +
-            '<div class="match-list" id="match-list">' +
-            (summonerState.history.length
-                ? summonerState.history.map(matchRowHtml).join('')
-                : '<div class="empty">최근 전적이 없습니다.</div>') +
-            '</div>' +
-            (summonerState.hasMore ? '<button class="more-btn" type="button" id="more-btn">전적 더 보기</button>' : '');
+            '<div id="match-area"></div>';
 
         body.innerHTML = html;
+        renderMatchArea();
+    }
+
+    function loadSummonerPage(riotId, refresh) {
+        var body = document.getElementById('summoner-body');
+        if (body && !refresh) body.innerHTML = App.ui.loading('전적을 불러오는 중입니다...');
+
+        var refreshBtn = document.getElementById('refresh-btn');
+        if (refreshBtn) { refreshBtn.disabled = true; refreshBtn.textContent = '갱신 중...'; }
+
+        Promise.all([
+            tft.loadStatic().catch(function () { return null; }),   // 정적 데이터가 늦어도 전적은 보여준다
+            App.api.get('/search/' + encodeURIComponent(riotId) + (refresh ? '?refresh=1' : ''))
+        ]).then(function (results) {
+            var data = results[1];
+            recents.add({ id: data.profile.name, at: Date.now() });
+            renderSummoner(data);
+            if (refresh) App.ui.showToast('전적을 갱신했습니다.');
+        }, function (err) {
+            if (refresh) {
+                var btn = document.getElementById('refresh-btn');
+                if (btn) { btn.disabled = false; btn.textContent = '전적 갱신'; }
+                App.ui.showToast(err.message);
+                return;
+            }
+            if (!body) return;
+            body.innerHTML = '<div class="error-box">' +
+                '<div class="error-msg">' + esc(err.message) + '</div>' +
+                '<button class="more-btn" type="button" id="retry-btn">다시 시도</button>' +
+                '</div>';
+        });
     }
 
     function loadMoreMatches() {
@@ -267,18 +370,7 @@
                 summonerState.nextStart = data.nextStart;
                 summonerState.hasMore = data.hasMore;
                 summonerState.history = summonerState.history.concat(data.history);
-
-                var list = document.getElementById('match-list');
-                if (list && data.history.length) {
-                    list.insertAdjacentHTML('beforeend', data.history.map(matchRowHtml).join(''));
-                }
-                var strip = document.getElementById('stats-strip');
-                if (strip) strip.innerHTML = statsStripHtml(summonerState.history);
-
-                if (btn) {
-                    if (summonerState.hasMore) { btn.disabled = false; btn.textContent = '전적 더 보기'; }
-                    else btn.remove();
-                }
+                renderMatchArea();
             }, function (err) {
                 summonerState.loadingMore = false;
                 if (btn) { btn.disabled = false; btn.textContent = '전적 더 보기'; }
@@ -347,6 +439,105 @@
     }
 
     // ------------------------------------------------------------
+    // 통계 페이지 (유닛 / 시너지 / 아이템)
+    // ------------------------------------------------------------
+    var statsState = null;   // { data, tab, sort }
+
+    var STATS_TABS = [
+        { key: 'units', label: '유닛' },
+        { key: 'traits', label: '시너지' },
+        { key: 'items', label: '아이템' }
+    ];
+
+    function pct(v) { return (v * 100).toFixed(1) + '%'; }
+
+    function statsNameCell(tab, row) {
+        if (tab === 'units') {
+            var c = tft.champ(row.id);
+            var name = c ? c.name : row.id.replace(/^TFT\d*_/, '');
+            var cost = c && c.cost ? Math.min(c.cost, 7) : 1;
+            return '<div class="stats-name cost-' + cost + '">' +
+                (c && c.icon ? '<img class="unit-icon stats-icon" src="' + esc(c.icon) + '" alt="" loading="lazy">' : '') +
+                '<span>' + esc(name) + '</span></div>';
+        }
+        if (tab === 'traits') {
+            var t = tft.trait(row.id);
+            return '<div class="stats-name">' +
+                (t && t.icon ? '<img class="trait-icon stats-trait-icon" src="' + esc(t.icon) + '" alt="" loading="lazy">' : '') +
+                '<span>' + esc(t ? t.name : row.id.replace(/^TFT\d*_/, '')) + '</span></div>';
+        }
+        var it = tft.item(row.id);
+        return '<div class="stats-name">' +
+            (it && it.icon ? '<img class="unit-item stats-item-icon" src="' + esc(it.icon) + '" alt="" loading="lazy">' : '') +
+            '<span>' + esc(it ? it.name : row.id.replace(/^TFT_Item_/, '')) + '</span></div>';
+    }
+
+    function renderStats() {
+        var body = document.getElementById('stats-body');
+        if (!body || !statsState) return;
+
+        var data = statsState.data;
+        var desc = document.getElementById('stats-desc');
+
+        if (!data || data.building || !data.units || !data.units.length) {
+            if (desc) desc.textContent = '상위 랭커의 랭크 게임을 수집해 집계합니다.';
+            body.innerHTML = '<div class="empty">아직 표본을 수집하는 중입니다' +
+                (data && data.sample ? ' (현재 ' + data.sample + '게임)' : '') +
+                '. 잠시 후 다시 확인해 주세요.</div>';
+            return;
+        }
+
+        if (desc) {
+            desc.textContent = '세트 ' + data.setNumber + ' · 상위 랭커 랭크 게임 ' + Number(data.sample).toLocaleString() +
+                '게임 표본 · ' + tft.timeAgo(data.updatedAt) + ' 갱신';
+        }
+
+        var tab = statsState.tab;
+        var rows = (data[tab] || []).slice();
+        if (statsState.sort === 'pick') rows.sort(function (a, b) { return b.games - a.games; });
+        else rows.sort(function (a, b) { return a.avgPlacement - b.avgPlacement; });
+
+        var tabsHtml = '<div class="rank-filters">' + STATS_TABS.map(function (t) {
+            return '<button class="rank-filter' + (tab === t.key ? ' active' : '') +
+                '" type="button" data-stats-tab="' + t.key + '">' + t.label + '</button>';
+        }).join('') +
+            '<span class="stats-sort">' +
+            '<button class="rank-filter' + (statsState.sort === 'avg' ? ' active' : '') + '" type="button" data-stats-sort="avg">평균 등수순</button>' +
+            '<button class="rank-filter' + (statsState.sort === 'pick' ? ' active' : '') + '" type="button" data-stats-sort="pick">픽률순</button>' +
+            '</span></div>';
+
+        var headExtra = tab === 'units' ? '<th>추천 아이템</th>' : '';
+        var rowsHtml = rows.map(function (r, i) {
+            var itemsCell = '';
+            if (tab === 'units') {
+                itemsCell = '<td><div class="stats-items">' + (r.items || []).map(function (n) {
+                    var it = tft.item(n);
+                    return it && it.icon
+                        ? '<img class="unit-item" src="' + esc(it.icon) + '" alt="" title="' + esc(it.name) + '" loading="lazy">'
+                        : '';
+                }).join('') + '</div></td>';
+            }
+            return '<tr>' +
+                '<td class="rank-no">' + (i + 1) + '</td>' +
+                '<td>' + statsNameCell(tab, r) + '</td>' +
+                '<td class="detail-num">' + pct(r.pickRate) + '</td>' +
+                '<td class="detail-num stats-avg">#' + r.avgPlacement.toFixed(2) + '</td>' +
+                '<td class="detail-num">' + pct(r.top4Rate) + '</td>' +
+                '<td class="detail-num">' + pct(r.winRate) + '</td>' +
+                itemsCell +
+                '</tr>';
+        }).join('');
+
+        body.innerHTML = tabsHtml +
+            '<div class="detail-scroll"><table class="rank-table stats-table">' +
+            '<thead><tr><th>#</th><th>' + (tab === 'units' ? '챔피언' : tab === 'traits' ? '시너지' : '아이템') + '</th>' +
+            '<th>픽률</th><th>평균 등수</th><th>순방률</th><th>1위율</th>' + headExtra + '</tr></thead>' +
+            '<tbody>' + rowsHtml + '</tbody></table></div>' +
+            '<p class="stats-note">픽률은 보드(참가자) 기준입니다. 표본이 적은 항목(' +
+            '게임 수 하위)은 집계에서 제외됩니다.</p>';
+    }
+
+    // ------------------------------------------------------------
     // 라우트 진입 핸들러
     // ------------------------------------------------------------
     App.pages = {
@@ -362,24 +553,8 @@
         summoner: function (ctx) {
             var riotId = ctx.params.riotId || '';
             App.ui.setTitle(riotId + ' - 전적검색');
-
-            var body = document.getElementById('summoner-body');
-            if (body) body.innerHTML = App.ui.loading('전적을 불러오는 중입니다...');
-
-            Promise.all([
-                tft.loadStatic().catch(function () { return null; }),   // 정적 데이터가 늦어도 전적은 보여준다
-                App.api.get('/search/' + encodeURIComponent(riotId))
-            ]).then(function (results) {
-                var data = results[1];
-                recents.add({ id: data.profile.name, at: Date.now() });
-                renderSummoner(data);
-            }, function (err) {
-                if (!body) return;
-                body.innerHTML = '<div class="error-box">' +
-                    '<div class="error-msg">' + esc(err.message) + '</div>' +
-                    '<button class="more-btn" type="button" id="retry-btn">다시 시도</button>' +
-                    '</div>';
-            });
+            summonerState = null;   // 다른 소환사로 넘어오면 큐 필터도 초기화
+            loadSummonerPage(riotId, false);
         },
 
         ranking: function () {
@@ -402,6 +577,25 @@
                     updated.textContent = 'KR 서버 랭크 TFT 상위 랭커 — ' + tft.timeAgo(data.updatedAt) + ' 갱신';
                 }
                 renderRanking();
+            }, function (err) {
+                if (body) body.innerHTML = '<div class="empty">' + esc(err.message) + '</div>';
+            });
+        },
+
+        stats: function () {
+            var body = document.getElementById('stats-body');
+            if (body) body.innerHTML = App.ui.loading('통계를 불러오는 중입니다...');
+
+            Promise.all([
+                tft.loadStatic().catch(function () { return null; }),
+                App.api.get('/stats')
+            ]).then(function (results) {
+                statsState = {
+                    data: results[1],
+                    tab: (statsState && statsState.tab) || 'units',
+                    sort: (statsState && statsState.sort) || 'avg'
+                };
+                renderStats();
             }, function (err) {
                 if (body) body.innerHTML = '<div class="empty">' + esc(err.message) + '</div>';
             });
@@ -467,6 +661,19 @@
 
                 if (e.target.closest('#more-btn')) { loadMoreMatches(); return; }
 
+                if (e.target.closest('#refresh-btn')) {
+                    if (summonerState) loadSummonerPage(summonerState.name, true);
+                    return;
+                }
+
+                var qf = e.target.closest('[data-qf]');
+                if (qf && summonerState) {
+                    var raw = qf.getAttribute('data-qf');
+                    summonerState.filter = raw === 'ALL' ? 'ALL' : Number(raw);
+                    renderMatchArea();
+                    return;
+                }
+
                 if (e.target.closest('#retry-btn')) {
                     var current = App.router.current;
                     if (current) App.pages.summoner(current);
@@ -500,6 +707,24 @@
                     rankingState.page += pager.getAttribute('data-page') === 'next' ? 1 : -1;
                     renderRanking();
                     window.scrollTo(0, 0);
+                }
+            });
+        }
+
+        // 통계 페이지 위임 배선 (탭 · 정렬)
+        var statsBody = document.getElementById('stats-body');
+        if (statsBody) {
+            statsBody.addEventListener('click', function (e) {
+                var tabBtn = e.target.closest('[data-stats-tab]');
+                if (tabBtn && statsState) {
+                    statsState.tab = tabBtn.getAttribute('data-stats-tab');
+                    renderStats();
+                    return;
+                }
+                var sortBtn = e.target.closest('[data-stats-sort]');
+                if (sortBtn && statsState) {
+                    statsState.sort = sortBtn.getAttribute('data-stats-sort');
+                    renderStats();
                 }
             });
         }
