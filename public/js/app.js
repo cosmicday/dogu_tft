@@ -581,7 +581,7 @@
         DoguUI.mountHeader({
             site: 'tft',
             home: home,
-            icons: App.url('/'),              // 스위처 아이콘 폴더: public/header_{key}.png → /tft/header_*.png
+            iconBase: App.url('/'),           // 스위처 아이콘 경로 앞부분(공통 규약 이름): public/header_{key}.png → /tft/header_*.png
             brand: common.brand, tld: common.tld, linkAttr: common.linkAttr,
             nav: App.navItems(),
             search: {

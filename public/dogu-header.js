@@ -8,13 +8,15 @@
 (function (global) {
     'use strict';
 
-    /* 게임 스위처 목록. 순서·주소는 DOGU_UI_PLAN.md 의 규격 그대로다. 여기서만 고친다 */
+    /* 게임 스위처 목록. 순서·주소는 DOGU_UI_PLAN.md 의 규격 그대로다. 여기서만 고친다.
+       아이콘은 각 사이트 public/ 의 header_{key}.png (256×256 투명 PNG, 여백 맞춰 둔 것) —
+       경로 앞부분은 mountHeader 의 opts.iconBase 로 받는다 (er: App.url('/')) */
     var GAMES = [
-        { key: 'lol',   name: '리그 오브 레전드', href: 'https://pixlol.kr', external: true },
-        { key: 'er',    name: '이터널 리턴',     href: '/er' },
-        { key: 'maple', name: '메이플스토리',    href: '/maple' },
-        { key: 'loa',   name: '로스트아크',      href: '/loa' },
-        { key: 'tft',   name: '전략적 팀 전투(TFT)', href: '/tft' }
+        { key: 'lol',   name: '리그 오브 레전드', icon: 'header_lol.png',   href: 'https://pixlol.kr', external: true },
+        { key: 'er',    name: '이터널 리턴',     icon: 'header_er.png',    href: '/er' },
+        { key: 'maple', name: '메이플스토리',    icon: 'header_maple.png', href: '/maple' },
+        { key: 'loa',   name: '로스트아크',      icon: 'header_loa.png',   href: '/loa' },
+        { key: 'tft',   name: '전략적 팀 전투(TFT)', icon: 'header_tft.png', href: '/tft' }
     ];
 
     var TEXT = {
@@ -56,28 +58,40 @@
     }
 
     /* ---------- 게임 스위처 ---------- */
-    /* 게임 아이콘 <img>. 파일은 각 사이트 public/ 의 header_{key}.png (256x256 투명 PNG, 다크 배경 전제).
-       opts.icons 가 아이콘 폴더 주소(예: '/tft'). SPA 경로 밑에서 상대경로가 깨지므로 절대경로로 만든다.
-       32x32 를 속성으로 못박아 로드 전 레이아웃 밀림을 막는다. 여백은 이미지에 이미 맞춰져 있어 CSS 로 더 안 준다 */
-    function gameIconHtml(g, opts) {
-        var base = String(opts.icons == null ? '' : opts.icons).replace(/\/+$/, '');
-        return '<img class="dogu-game-icon" src="' + esc(base + '/header_' + g.key + '.png') +
-            '" alt="' + esc(g.name) + '" width="32" height="32" decoding="async">';
+    /* 아이콘 경로 앞부분. 정식 이름은 opts.iconBase 이고 '/tft/' 처럼 슬래시로 끝난다.
+       한때 tft 복사본이 opts.icons('/tft') 로 갈라졌던 적이 있어 둘 다 받고 끝 슬래시를 맞춘다.
+       둘 다 없으면 null → 글자 타일 폴백 */
+    function iconBaseOf(opts) {
+        var base = opts.iconBase != null ? opts.iconBase : opts.icons;
+        if (base == null) return null;
+        base = String(base);
+        return base === '' || /\/$/.test(base) ? base : base + '/';
     }
 
-    function switcherHtml(opts) {
-        var cur = GAMES.filter(function (g) { return g.key === opts.site; })[0] || GAMES[1];
+    /* 아이콘 <img>. width/height 를 속성으로 박아 이미지가 늦게 와도 칸이 안 밀린다.
+       아이콘 자체에 여백이 맞춰져 있으니 padding·crop 을 더하지 않는다.
+       iconBase 가 없으면 액센트색 글자 타일(.dogu-game-mark)로 그린다 */
+    function gameIcon(g, size, base) {
+        if (base == null) {
+            return '<span class="dogu-game-mark" aria-hidden="true">' + esc(g.name.charAt(0)) + '</span>';
+        }
+        return '<img class="dogu-game-icon" src="' + esc(base + g.icon) + '" alt="' + esc(g.name) + '"' +
+            ' width="' + size + '" height="' + size + '" decoding="async">';
+    }
+
+    function switcherHtml(site, iconBase) {
+        var cur = GAMES.filter(function (g) { return g.key === site; })[0] || GAMES[1];
         var items = GAMES.map(function (g) {
-            var inner = gameIconHtml(g, opts) + '<span class="dogu-game-name">' + esc(g.name) + '</span>';
+            var inner = gameIcon(g, 32, iconBase) + '<span class="dogu-game-name">' + esc(g.name) + '</span>';
             if (g.key === cur.key) {
                 return '<span class="dogu-game-item active" aria-current="page">' + inner + '</span>';
             }
             return '<a class="dogu-game-item" href="' + esc(g.href) + '"' +
-                (g.external ? ' rel="noopener"' : '') + '>' + inner + '</a>';
+                (g.external ? ' rel="noopener"' : '') + ' title="' + esc(g.name) + '">' + inner + '</a>';
         }).join('');
         return '<div class="dogu-switcher" id="dogu-switcher">' +
-            '<button class="dogu-switcher-btn" type="button" id="dogu-switcher-btn" aria-haspopup="true" aria-expanded="false">' +
-            gameIconHtml(cur, opts) + '<span class="dogu-game-name">' + esc(cur.name) + '</span>' +
+            '<button class="dogu-switcher-btn" type="button" id="dogu-switcher-btn" aria-haspopup="true" aria-expanded="false" title="' + esc(cur.name) + '">' +
+            gameIcon(cur, 22, iconBase) + '<span class="dogu-game-name">' + esc(cur.name) + '</span>' +
             '<span class="dogu-caret">▼</span></button>' +
             '<div class="dogu-switcher-list" role="menu">' + items + '</div></div>';
     }
@@ -109,7 +123,7 @@
         var placeholder = (opts.search && opts.search.placeholder) || '검색어를 입력해주세요.';
         return '<div class="dogu-gnb-utility"><div class="dogu-wrap dogu-gnb-utility-inner">' +
             brandHtml(opts, 'dogu-brand') +
-            switcherHtml(opts) +
+            switcherHtml(opts.site, iconBaseOf(opts)) +
             '<div class="dogu-gnb-right">' +
                 (opts.search === false ? '' :
                 '<form class="dogu-gnb-search" id="dogu-gnb-search" autocomplete="off">' +
@@ -328,6 +342,44 @@
         '</div></div>';
     }
 
+    /* 히어로 상자 규격 검사 (개발자 콘솔 경고만, 화면에는 영향 없음).
+       히어로는 헤더 바로 밑·화면 폭 전체·패딩 0 인 상자에 들어가야 5개 사이트에서 같은 자리에 그려진다.
+       사이트 `main { padding: 0 20px }` 나 `.page-container { padding-top: 22px }` 안에 두면
+       검색창이 좁아지거나 내려앉는데(loa·tft·pixlol 에서 실제로), 스크린샷만으로는 눈치채기 어려워 여기서 잡는다 */
+    function warnHeroHost(host) {
+        if (!host || typeof console === 'undefined' || !console.warn) return;
+        /* 마운트 직후엔 #hero 가 아직 display:none 인 페이지 안에 있을 수 있어(라우터가 나중에 켠다)
+           폭이 0 으로 잰다. 패딩은 숨겨져 있어도 계산되므로 바로 보고, 폭은 보일 때까지 몇 번 기다린다 */
+        var tries = 0;
+        function check() {
+            try {
+                var rect = host.getBoundingClientRect();
+                if (rect.width === 0 && tries++ < 20) { setTimeout(check, 500); return; }
+                var viewport = document.documentElement.clientWidth;
+                var problems = [];
+                var node = host;
+                while (node && node !== document.body) {
+                    var cs = getComputedStyle(node);
+                    if (parseFloat(cs.paddingLeft) || parseFloat(cs.paddingRight) || parseFloat(cs.paddingTop)) {
+                        problems.push(describe(node) + ' padding ' + cs.padding);
+                    }
+                    node = node.parentElement;
+                }
+                if (rect.width > 0 && Math.round(rect.width) < viewport - 1) {
+                    problems.push('상자 폭 ' + Math.round(rect.width) + 'px < 화면 ' + viewport + 'px');
+                }
+                if (problems.length) {
+                    console.warn('[dogu-ui] 히어로 상자가 규격(화면 폭 전체 · 패딩 0)을 벗어났다 → 검색창 위치·폭이 다른 사이트와 달라진다. ' +
+                        'DOGU_UI.md 5절 참고: ' + problems.join(' / '));
+                }
+            } catch (e) { /* 측정 실패는 무시 */ }
+        }
+        function describe(n) {
+            return n.tagName.toLowerCase() + (n.id ? '#' + n.id : '') + (n.className ? '.' + String(n.className).trim().split(/\s+/).join('.') : '');
+        }
+        setTimeout(check, 0);
+    }
+
     /* ---------- 공개 API ---------- */
     var DoguUI = {
         GAMES: GAMES,
@@ -366,6 +418,7 @@
             host.appendChild(hero);
             bindHero(hero, opts);
             bindSlash();
+            warnHeroHost(host);
             return hero;
         },
 

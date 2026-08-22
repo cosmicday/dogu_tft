@@ -31,14 +31,16 @@
 
     <div id="toast" class="toast"></div>
 
+    <!-- 히어로(공통 검색창 + 즐겨찾기/최근 검색 드롭다운) — DoguUI.mountHero('#hero', …).
+         ★ main 밖에 둔다 — main 의 좌우 20px 패딩이 히어로를 좁혀 다른 사이트와 검색창 폭이 달라졌다 (2026-08-22 실측).
+         홈이 아닐 땐 공통 CSS 가 body.dogu-home 기준으로 숨긴다. 자동완성 패널(#search-suggest)은 app.js 가 검색창 밑에 끼운다 -->
+    <div id="hero"></div>
+
     <main>
         <!-- ==================================================
-             홈 — 히어로(공통 검색창 + 즐겨찾기/최근 검색 드롭다운) + 자동완성
+             홈 — 히어로는 위(main 밖). 이 컨테이너는 홈 본문 자리
              ================================================== -->
-        <section class="page-container page-home" id="page-home">
-            <!-- DoguUI.mountHero('#hero', …). 자동완성 패널(#search-suggest)은 app.js 가 검색창 밑에 끼운다 -->
-            <div id="hero"></div>
-        </section>
+        <section class="page-container page-home" id="page-home"></section>
 
         <!-- ==================================================
              소환사 전적 페이지
