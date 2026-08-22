@@ -72,6 +72,10 @@
         App.ui.showPage(route.page);
         App.ui.setActiveNav(route.nav);
         App.ui.setTitle(route.title);
+        if (window.DoguUI) {
+            DoguUI.setActiveNav(route.nav);          // routes.js navItems() 가 key 로 route.nav 를 줬다
+            DoguUI.setHome(route.id === 'home');     // 홈 판정은 라우트 id 하나로 — 배경 오버레이 농도
+        }
         window.scrollTo(0, 0);
 
         current = {

@@ -58,19 +58,16 @@
         { id: 'notfound', path: '/__notfound', page: 'page-notfound', title: '404', notFound: true }
     ];
 
-    function renderNav() {
-        var nav = document.getElementById('nav-menu');
-        if (!nav) return;
-
-        nav.innerHTML = ROUTES
+    // 공통 헤더(DoguUI.mountHeader)의 2단 네비 항목. key 는 route.nav 와 같아서
+    // router.js 가 DoguUI.setActiveNav(route.nav) 로 활성 표시를 맞춘다.
+    function navItems() {
+        return ROUTES
             .filter(function (r) { return r.inNav && !App.router.isHidden(r); })
             .map(function (r) {
-                return '<a class="nav-item" id="' + r.nav + '" href="' + App.ui.escapeHtml(App.url(r.path)) + '" data-link>' +
-                    App.ui.escapeHtml(r.label) + '</a>';
-            })
-            .join('');
+                return { key: r.nav, label: r.label, href: App.url(r.path) };
+            });
     }
 
     App.routes = ROUTES;
-    App.renderNav = renderNav;
+    App.navItems = navItems;
 })(window.App);

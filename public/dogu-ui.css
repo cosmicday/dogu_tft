@@ -1,0 +1,505 @@
+/* 공통 UI 파일. 이 파일은 원본에서 복사되어 배포된다.
+   각 사이트 폴더에서 직접 수정하지 말 것 — 원본을 고치고 다시 복사할 것. */
+
+/* =========================================================
+   dogu.gg 공통 UI — 토큰 · 배경 · 헤더 · 히어로 검색 · 푸터 · 404 · 준비중
+   모든 수치는 dogu_er/public/style.css(2026-08-22)에서 그대로 가져왔다.
+   선택자는 전부 .dogu- 접두사라 각 사이트의 기존 CSS 와 안 겹친다.
+   사이트가 바꿀 수 있는 것은 :root 의 "사이트별 변수" 블록뿐이다 (DOGU_UI.md 참고).
+   ========================================================= */
+
+/* ---------- 1. 토큰 ---------- */
+:root {
+    /* ── 사이트별 변수 (각 사이트의 style.css 에서 덮어쓴다) ── */
+    --dogu-bg: #0a1224;                       /* 이미지 로드 전/밖 바탕색. theme-color 와 일치시킬 것 */
+    --dogu-accent: #45b3f2;                   /* 액센트 밝은쪽: 로고 .GG · 활성 표시 · 포커스 테두리 */
+    --dogu-accent-dark: #1f6fd0;              /* 액센트 어두운쪽: 검색 버튼 그라데이션 끝 */
+    --dogu-bg-image: none;                    /* url('./img/bg.webp') — 사이트가 지정 */
+    --dogu-bg-blur: 0px;                      /* 배경 이미지 블러. 기본 0 (오버레이만으로 가독성 확보) */
+    --dogu-overlay-rgb: 6, 11, 26;            /* 오버레이 색 (er 남색) */
+    /* 홈 오버레이 농도 — 위(히어로 구간)는 옅게, 본문부터 진하게. px 는 뷰포트 기준 +150 */
+    --dogu-overlay-home-top: 0.52;
+    --dogu-overlay-home-mid: 0.56;            /* @520px */
+    --dogu-overlay-home-deep: 0.9;            /* @880px */
+    --dogu-overlay-home-bottom: 0.93;
+    /* 홈 이외 페이지 오버레이 농도 — 표 읽기가 우선이라 진하다 */
+    --dogu-overlay-page-top: 0.8;
+    --dogu-overlay-page-deep: 0.93;           /* @560px 부터 끝까지 */
+
+    /* ── 공통 토큰 (건드리지 말 것) ── */
+    --dogu-text: #e6eefb;
+    --dogu-text-2: #9fb2d2;
+    --dogu-text-3: #7288ac;
+    --dogu-card: rgba(15, 26, 48, 0.76);
+    --dogu-card-2: rgba(38, 58, 94, 0.42);
+    --dogu-line: rgba(130, 175, 235, 0.14);
+    --dogu-line-2: rgba(130, 175, 235, 0.28);
+    --dogu-gnb-top: rgba(8, 15, 32, 0.66);    /* 헤더 1단 · 푸터 */
+    --dogu-gnb-nav: rgba(15, 27, 52, 0.55);   /* 헤더 2단 */
+    --dogu-gnb-text: #a9bcd9;
+    --dogu-gnb-text-strong: #ffffff;
+    --dogu-radius: 10px;
+    --dogu-wrap: 1120px;
+    --dogu-font: 'Pretendard', 'Malgun Gothic', system-ui, sans-serif;
+
+    /* 액센트에서 파생 — 사이트가 따로 줄 필요 없다 (er: #7cccf8 / rgba(69,179,242,.15)) */
+    --dogu-accent-strong: color-mix(in srgb, var(--dogu-accent) 72%, #ffffff);
+    --dogu-accent-weak: color-mix(in srgb, var(--dogu-accent) 15%, transparent);
+    --dogu-accent-glow: color-mix(in srgb, var(--dogu-accent) 45%, transparent);
+    --dogu-accent-glow-strong: color-mix(in srgb, var(--dogu-accent) 70%, transparent);
+    --dogu-accent-focus: color-mix(in srgb, var(--dogu-accent-strong) 75%, transparent);
+}
+
+/* ---------- 2. 배경 구조 ----------
+   ★ html 에 배경(색 포함)을 깔면 안 된다. body 배경이 루트 캔버스로 승격돼야
+     음수 z-index 의 가상요소가 그 위·콘텐츠 아래에 놓인다 (pixlol 에서 밟은 사고).
+   이미지 레이어(::before)는 뷰포트와 정확히 같은 크기여야 한다 — er 의 body 배경
+   (fixed + cover)이 뷰포트 기준으로 맞춰지기 때문. 상자를 키우면 cover 가 그만큼
+   확대돼 원본보다 크게 보인다 (한 번 밟았음). 오버레이(::after)만 위아래 150px
+   삐져나간다 (er 의 body::before 그대로, 주소창 수축 대비). */
+html { background: none; }
+
+body.dogu-body {
+    margin: 0;
+    font-family: var(--dogu-font);
+    background: var(--dogu-bg);
+    color: var(--dogu-text);
+    min-height: 100vh;
+}
+
+body.dogu-body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -2;
+    background: var(--dogu-bg-image) no-repeat center center / cover var(--dogu-bg);
+    filter: blur(var(--dogu-bg-blur));
+    pointer-events: none;
+}
+
+body.dogu-body::after {
+    content: '';
+    position: fixed;
+    top: -150px;
+    left: 0;
+    right: 0;
+    bottom: -150px;
+    z-index: -1;
+    pointer-events: none;
+    /* 홈 이외 페이지(기본) — 진하게 */
+    background: linear-gradient(180deg,
+        rgba(var(--dogu-overlay-rgb), var(--dogu-overlay-page-top)) 0px,
+        rgba(var(--dogu-overlay-rgb), var(--dogu-overlay-page-deep)) 560px,
+        rgba(var(--dogu-overlay-rgb), var(--dogu-overlay-page-deep)) 100%);
+}
+
+/* 홈 — 사이트 라우터가 body 에 .dogu-home 을 붙인다/뗀다 */
+body.dogu-body.dogu-home::after {
+    background: linear-gradient(180deg,
+        rgba(var(--dogu-overlay-rgb), var(--dogu-overlay-home-top)) 0px,
+        rgba(var(--dogu-overlay-rgb), var(--dogu-overlay-home-mid)) 520px,
+        rgba(var(--dogu-overlay-rgb), var(--dogu-overlay-home-deep)) 880px,
+        rgba(var(--dogu-overlay-rgb), var(--dogu-overlay-home-bottom)) 100%);
+}
+
+/* ---------- 3. 공용 ---------- */
+.dogu-wrap { max-width: var(--dogu-wrap); margin: 0 auto; padding: 0 16px; }
+:where(.dogu-gnb, .dogu-footer, .dogu-hero, .dogu-doc) a { text-decoration: none; color: inherit; }
+/* ↑ :where 로 특이도를 0 으로 낮춘다. 그냥 `.dogu-gnb a` 로 쓰면 (0,1,1) 이라
+   `.dogu-nav-item` (0,1,0) 의 색을 덮어써서 네비가 기본부터 하얘진다 (밟았음) */
+.dogu-gnb *, .dogu-hero *, .dogu-footer *, .dogu-doc * { box-sizing: border-box; }
+
+/* 로고 — 이탤릭 텍스트 2조각. 아이콘 없음 */
+.dogu-brand {
+    display: inline-flex;
+    align-items: center;
+    font-size: 21px;
+    font-weight: 900;
+    letter-spacing: -0.6px;
+    color: #fff;
+    font-style: italic;
+    text-shadow: 0 0 14px var(--dogu-accent-glow);
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;                 /* 로고는 드래그 선택 안 되게 */
+    -webkit-user-select: none;
+}
+.dogu-brand em { font-style: italic; color: var(--dogu-accent); }
+
+/* ---------- 4. 헤더 (2단, 프로스트 유리) ---------- */
+.dogu-gnb {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(14px) saturate(1.3);
+    -webkit-backdrop-filter: blur(14px) saturate(1.3);
+    border-bottom: 1px solid rgba(140, 190, 250, 0.14);
+    font-family: var(--dogu-font);
+}
+
+/* 1단: 로고 / 게임 스위처 / (우) 검색창 */
+.dogu-gnb-utility { background: var(--dogu-gnb-top); }
+.dogu-gnb-utility-inner { display: flex; align-items: center; gap: 12px; height: 62px; }
+.dogu-gnb-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+
+/* 게임 스위처 */
+.dogu-switcher { position: relative; }
+.dogu-switcher-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 34px;
+    padding: 0 12px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+    color: #fff;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.dogu-switcher-btn:hover { background: rgba(255, 255, 255, 0.12); }
+/* 게임 아이콘 — 각 사이트 public/header_{key}.png (256x256 투명 PNG). 32x32 고정.
+   이미지에 여백이 이미 맞춰져 있으므로 padding·object-fit·border-radius 로 더 손대지 않는다 */
+.dogu-game-icon {
+    width: 32px;
+    height: 32px;
+    flex: none;
+    display: block;
+}
+.dogu-game-name { white-space: nowrap; }
+.dogu-caret { font-size: 9px; opacity: 0.7; }
+.dogu-switcher-list {
+    display: none;
+    position: absolute;
+    top: 40px;
+    left: 0;
+    z-index: 10;                       /* 2단 네비 위로 */
+    min-width: 200px;
+    padding: 6px;
+    background: var(--dogu-card);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid var(--dogu-line-2);
+    border-radius: var(--dogu-radius);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+.dogu-switcher.open .dogu-switcher-list { display: block; }
+.dogu-game-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 13px;
+    color: var(--dogu-text-2);
+    white-space: nowrap;
+}
+/* 현재 사이트만 아이콘 밝게, 나머지는 낮춘다 */
+.dogu-game-item .dogu-game-icon { opacity: 0.55; transition: opacity 0.15s; }
+a.dogu-game-item:hover { color: #fff; background: rgba(255, 255, 255, 0.06); }
+a.dogu-game-item:hover .dogu-game-icon { opacity: 0.85; }
+.dogu-game-item.active { color: var(--dogu-accent-strong); font-weight: 800; background: var(--dogu-accent-weak); }
+.dogu-game-item.active .dogu-game-icon { opacity: 1; }
+.dogu-game-item.muted em { font-style: normal; font-size: 11px; color: var(--dogu-text-3); }
+
+/* 1단 작은 검색창 — 상시 노출, 768px 이하에서만 숨김. 드롭다운 없음 */
+.dogu-gnb-search {
+    display: flex;
+    align-items: center;
+    width: 250px;
+    height: 34px;
+    padding: 0 10px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.06);
+}
+.dogu-gnb-search:focus-within { border-color: var(--dogu-accent); }
+.dogu-gnb-search input {
+    flex: 1;
+    min-width: 0;                      /* flex 안 input 지뢰 */
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: #fff;
+    font-family: inherit;
+    font-size: 12.5px;
+}
+.dogu-gnb-search input::placeholder { color: rgba(255, 255, 255, 0.42); }
+.dogu-gnb-search button {
+    border: 0;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    font-size: 13px;
+    padding: 0 2px;
+    line-height: 1;
+}
+.dogu-gnb-search button:hover { color: #fff; }
+
+/* 2단: 네비게이션 / (우) 보조 정보 */
+.dogu-gnb-main { background: var(--dogu-gnb-nav); }
+.dogu-gnb-main-inner { display: flex; align-items: center; gap: 4px; height: 46px; }
+.dogu-nav-home {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 46px;
+    color: var(--dogu-gnb-text);
+    font-size: 14px;
+}
+.dogu-nav-home:hover { color: #fff; }
+.dogu-nav {
+    display: flex;
+    gap: 2px;
+    overflow-x: auto;
+    white-space: nowrap;
+    scrollbar-width: none;
+}
+.dogu-nav::-webkit-scrollbar { display: none; }
+.dogu-nav-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    height: 46px;
+    padding: 0 12px;
+    color: var(--dogu-gnb-text);
+    font-size: 13.5px;
+    font-weight: 700;
+}
+.dogu-nav-item:hover { color: #fff; }
+.dogu-nav-item.active { color: var(--dogu-gnb-text-strong); }
+.dogu-nav-item.active::after {
+    content: '';
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 0;
+    height: 2px;
+    background: var(--dogu-accent);
+    box-shadow: 0 0 8px var(--dogu-accent-glow-strong);
+}
+.dogu-gnb-aside {
+    margin-left: auto;
+    padding-left: 12px;
+    font-size: 11.5px;
+    color: var(--dogu-gnb-text);
+    white-space: nowrap;
+}
+.dogu-gnb-aside b { color: var(--dogu-accent-strong); }
+
+/* ---------- 5. 히어로 + 메인 검색 ----------
+   히어로에 판·경계선·높이 없음. 패딩만 통일. 오버레이의 옅은 구간이 이 자리다. */
+.dogu-hero { position: relative; font-family: var(--dogu-font); }
+.dogu-hero-inner { position: relative; z-index: 1; padding: 74px 16px 62px; text-align: center; }
+/* 히어로 로고도 홈 링크다. 밑줄·색 변화 없이 모양 그대로 */
+.dogu-hero-mark {
+    display: inline-block;
+    font-size: 52px;
+    font-weight: 900;
+    font-style: italic;
+    letter-spacing: -1px;
+    color: #fff;
+    text-shadow: 0 2px 18px rgba(4, 10, 24, 0.55), 0 0 34px var(--dogu-accent-glow);
+    line-height: 1.15;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+}
+.dogu-hero-mark em { font-style: italic; color: var(--dogu-accent); }
+
+.dogu-search-wrapper { position: relative; max-width: 600px; margin: 26px auto 0; text-align: left; }
+
+/* 알약 유리 검색창. 셀렉트 없음 */
+.dogu-search-box {
+    display: flex;
+    align-items: center;
+    height: 52px;
+    background: rgba(10, 19, 38, 0.58);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 999px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(2, 8, 20, 0.5);
+}
+.dogu-search-box:focus-within { border-color: var(--dogu-accent-focus); }
+.dogu-search-box.shake { animation: doguShakeX 0.35s ease; }
+.dogu-search-input {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: #fff;
+    font-family: inherit;
+    font-size: 14px;
+    padding: 0 14px;
+}
+.dogu-search-input::placeholder { color: rgba(255, 255, 255, 0.45); }
+/* 버튼은 radius 없음 — 박스의 알약에 잘려 들어간다 */
+.dogu-search-btn {
+    align-self: stretch;
+    width: 58px;
+    border: 0;
+    background: linear-gradient(135deg, var(--dogu-accent), var(--dogu-accent-dark));
+    color: #fff;
+    font-size: 17px;
+    cursor: pointer;
+    transition: filter 0.15s;
+}
+.dogu-search-btn:hover { filter: brightness(1.15); }
+/* 기본 버튼 내용 ".GG" — 로고와 같은 결(이탤릭·900). 돋보기를 쓸 땐 이 span 이 없다 */
+.dogu-search-btn-gg { font-size: 15px; font-weight: 900; font-style: italic; letter-spacing: -0.3px; }
+.dogu-search-error { display: none; margin-top: 8px; color: #ffb4b6; font-size: 12.5px; text-align: center; }
+.dogu-search-error.show { display: block; }
+.dogu-search-note {
+    margin: 10px 0 0;
+    color: rgba(255, 255, 255, 0.88);
+    font-size: 12px;
+    text-align: center;
+    text-shadow: 0 1px 8px rgba(4, 10, 24, 0.75);
+}
+.dogu-search-note kbd {
+    display: inline-block;
+    padding: 0 5px;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 11px;
+    line-height: 16px;
+}
+
+/* 포커스 드롭다운 — 검색창에 포커스가 있을 때만. 흐름에서 빼서 히어로 높이가 안 흔들린다 */
+.dogu-search-dropdown {
+    display: none;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(100% + 12px);
+    z-index: 20;
+    background: var(--dogu-card);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid var(--dogu-line-2);
+    border-radius: var(--dogu-radius);
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+.dogu-search-dropdown.open { display: block; }
+.dogu-dropdown-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--dogu-line);
+    background: var(--dogu-card-2);
+}
+.dogu-dropdown-tab { font-size: 12.5px; font-weight: 700; color: var(--dogu-text-3); cursor: pointer; }
+.dogu-dropdown-tab.active { color: var(--dogu-accent-strong); }
+.dogu-dropdown-hint { margin-left: auto; font-size: 11px; color: var(--dogu-text-3); }
+.dogu-dropdown-row { display: flex; align-items: center; padding: 7px 14px; border-top: 1px solid var(--dogu-line); }
+.dogu-dropdown-row:first-child { border-top: 0; }
+.dogu-dropdown-link { flex: 1; display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--dogu-text-2); cursor: pointer; }
+.dogu-dropdown-link:hover { color: var(--dogu-accent-strong); }
+.dogu-dropdown-del {
+    border: 0;
+    background: transparent;
+    color: var(--dogu-text-3);
+    font-size: 12px;
+    cursor: pointer;
+    padding: 2px 4px;
+}
+.dogu-dropdown-del:hover { color: #f0687e; }
+.dogu-dropdown-empty { padding: 20px; text-align: center; color: var(--dogu-text-3); font-size: 12.5px; }
+
+@keyframes doguShakeX {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+}
+
+/* ---------- 6. 푸터 ---------- */
+.dogu-footer {
+    border-top: 1px solid var(--dogu-line);
+    background: var(--dogu-gnb-top);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    font-family: var(--dogu-font);
+}
+.dogu-footer-inner { padding: 26px 16px 40px; }
+.dogu-footer .dogu-brand { font-size: 20px; text-shadow: none; }
+.dogu-footer-links { display: flex; gap: 16px; margin: 12px 0 14px; flex-wrap: wrap; }
+.dogu-footer-links a { font-size: 12px; font-weight: 700; color: #a9bcd9; cursor: pointer; }
+.dogu-footer-links a:hover { color: var(--dogu-accent-strong); }
+.dogu-footer-note { font-size: 11.5px; color: #7288ac; line-height: 1.7; word-break: keep-all; margin-top: 4px; }
+
+/* 복사 안내 토스트 (값은 er .toast 그대로) */
+.dogu-toast {
+    position: fixed;
+    left: 50%;
+    top: 120px;
+    transform: translate(-50%, -14px);
+    padding: 12px 20px;
+    background: var(--dogu-card);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid var(--dogu-line-2);
+    border-radius: var(--dogu-radius);
+    color: var(--dogu-text);
+    font-family: var(--dogu-font);
+    font-size: 13px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.22s, transform 0.22s;
+    z-index: 1000;
+    max-width: min(92vw, 520px);
+    text-align: center;
+}
+.dogu-toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+/* ---------- 7. 404 · 준비중 ---------- */
+.dogu-doc { padding: 20px 16px 60px; font-family: var(--dogu-font); }
+.dogu-doc-panel {
+    background: var(--dogu-card);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--dogu-line);
+    border-radius: var(--dogu-radius);
+    padding: 16px 18px;                /* er .panel-pad */
+    box-shadow: 0 2px 14px rgba(2, 6, 16, 0.35);
+    margin-bottom: 16px;
+    overflow: hidden;
+}
+.dogu-doc-title { margin: 0 0 10px; font-size: 20px; font-weight: 800; color: var(--dogu-text); }
+.dogu-doc p { margin: 0 0 10px; color: var(--dogu-text-2); line-height: 1.85; }
+.dogu-doc-link { color: var(--dogu-accent-strong); font-weight: 700; }
+.dogu-doc-link:hover { text-decoration: underline; }
+
+/* ---------- 8. 반응형 ---------- */
+@media (max-width: 1024px) {
+    .dogu-gnb-search { width: 180px; }
+}
+@media (max-width: 768px) {
+    .dogu-gnb-utility-inner { height: 52px; gap: 8px; }
+    .dogu-gnb-search { display: none; }
+    /* 좁은 화면: 스위처는 아이콘만 (게임명 숨김). 목록은 넓이를 아이콘에 맞춘다 */
+    .dogu-game-name { display: none; }
+    .dogu-switcher-btn { padding: 0 8px; }
+    .dogu-switcher-list { min-width: 0; }
+    .dogu-brand { font-size: 18px; }
+    .dogu-gnb-aside { display: none; }
+    .dogu-hero-inner { padding: 32px 16px 28px; }
+    .dogu-hero-mark { font-size: 24px; }
+    .dogu-search-box { height: 42px; }
+    .dogu-dropdown-hint { display: none; }
+    .dogu-search-shortcut { display: none; }   /* 모바일엔 키보드가 없다 */
+    .dogu-toast { top: auto; bottom: 20px; }
+}

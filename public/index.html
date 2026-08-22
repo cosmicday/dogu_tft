@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>%SITE_NAME%</title>
     <meta name="description" content="%SITE_NAME% - TFT(전략적 팀 전투) 전적검색. 최근 전적, 덱 구성, 시너지, 증강체, 챌린저 랭킹을 한눈에.">
+    <meta name="theme-color" content="#0a0f1c">   <!-- style.css 의 --dogu-bg 와 같은 값 -->
 
     <link rel="canonical" href="%SITE_URL%/">
     <meta property="og:type" content="website">
@@ -15,56 +16,28 @@
     <meta property="og:image" content="%SITE_URL%/og.png">
     <meta name="twitter:card" content="summary_large_image">
 
-    <link rel="icon" href="%BASE%/favicon.svg?v=%V%">
+    <link rel="icon" type="image/png" href="%BASE%/favicon.png?v=%V%">
+    <link rel="apple-touch-icon" href="%BASE%/favicon.png?v=%V%">
+    <!-- 공통 UI 는 사이트 CSS 앞에. 사이트 CSS 는 :root 변수만 덮어쓴다 (DOGU_UI.md 1절) -->
+    <link rel="stylesheet" href="%BASE%/dogu-ui.css?v=%V%">
     <link rel="stylesheet" href="%BASE%/style.css?v=%V%">
 
     <!-- 서버가 주입하는 런타임 설정. 모든 클라이언트 코드가 여기서 basePath를 읽는다. -->
     <script>window.__APP_CONFIG__ = %APP_CONFIG%;</script>
 </head>
 
-<body>
-    <header class="header">
-        <a class="logo" href="%BASE%/" data-link>
-            <span class="logo-mark">⬡</span>
-            <span class="logo-text">%SITE_NAME%</span>
-        </a>
-        <!-- 네비게이션은 routes.js가 그린다. 라우트 추가 = 메뉴 추가 -->
-        <nav class="nav-menu" id="nav-menu"></nav>
-    </header>
+<body class="dogu-body">
+    <!-- 헤더는 DoguUI.mountHeader() 가 body 맨 앞에 끼운다 (app.js) -->
 
     <div id="toast" class="toast"></div>
 
     <main>
         <!-- ==================================================
-             홈 — 히어로 + 검색 + 즐겨찾기/최근기록
+             홈 — 히어로(공통 검색창 + 즐겨찾기/최근 검색 드롭다운) + 자동완성
              ================================================== -->
         <section class="page-container page-home" id="page-home">
-            <div class="hero">
-                <h1 class="hero-title">%SITE_NAME%</h1>
-                <p class="hero-sub">TFT 전적검색 — 최근 전적 · 덱 구성 · 시너지 · 랭킹</p>
-            </div>
-
-            <div class="search-wrapper">
-                <div class="search-box" id="search-box">
-                    <input type="text" class="search-input" id="search-input"
-                           placeholder="소환사명#태그 (예: Hide on bush#KR1)" autocomplete="off">
-                    <button class="search-btn" id="search-btn" type="button">검색</button>
-                </div>
-                <div class="search-error" id="search-error"></div>
-
-                <!-- 입력 중 자동완성 (Mongo에 축적된 소환사) -->
-                <div class="search-suggest" id="search-suggest"></div>
-
-                <div class="search-dropdown" id="search-dropdown">
-                    <div class="dropdown-header">
-                        <span class="dropdown-tab active" data-tab="favorites">★ 즐겨찾기</span>
-                        <span class="tab-divider">|</span>
-                        <span class="dropdown-tab" data-tab="recents">🕘 최근검색</span>
-                        <span class="dropdown-hint">각각 10개까지 저장됩니다.</span>
-                    </div>
-                    <div class="dropdown-list" id="dropdown-list"></div>
-                </div>
-            </div>
+            <!-- DoguUI.mountHero('#hero', …). 자동완성 패널(#search-suggest)은 app.js 가 검색창 밑에 끼운다 -->
+            <div id="hero"></div>
         </section>
 
         <!-- ==================================================
@@ -131,31 +104,12 @@
             <p>건의사항, 버그 리포트 또는 개인정보 처리방침 관련 문의는 <b>%CONTACT_EMAIL%</b> 로 연락해 주시기 바랍니다.</p>
         </section>
 
-        <section class="page-container page-doc" id="page-notfound">
-            <h2 class="page-title">404</h2>
-            <p>요청하신 페이지를 찾을 수 없습니다.</p>
-            <p><a href="%BASE%/" data-link class="text-link">홈으로 돌아가기</a></p>
-        </section>
-
-        <footer class="footer">
-            <div class="footer-links">
-                <a href="%BASE%/terms" data-link>이용약관</a>
-                <span class="sep">|</span>
-                <a href="%BASE%/privacy" data-link>개인정보 처리방침</a>
-                <span class="sep">|</span>
-                <a href="#" id="contact-link">버그제보 및 피드백</a>
-            </div>
-            <div class="footer-note">
-                %SITE_NAME% is not endorsed by Riot Games and does not reflect the views or opinions of Riot Games
-                or anyone officially involved in producing or managing Riot Games properties. Riot Games and
-                Teamfight Tactics are trademarks or registered trademarks of Riot Games, Inc.
-            </div>
-            <div class="footer-note">
-                Contact: <span id="contact-email">%CONTACT_EMAIL%</span>
-            </div>
-        </footer>
+        <!-- 404 본문은 DoguUI.notFoundHtml() 이 채운다 (app.js) -->
+        <section class="page-container dogu-doc" id="page-notfound"></section>
     </main>
+    <!-- 푸터는 DoguUI.mountFooter() 가 body 끝에 붙인다 (app.js) -->
 
+    <script src="%BASE%/dogu-header.js?v=%V%"></script>
     <script src="%BASE%/js/base.js?v=%V%"></script>
     <script src="%BASE%/js/ui.js?v=%V%"></script>
     <script src="%BASE%/js/store.js?v=%V%"></script>

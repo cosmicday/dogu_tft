@@ -19,58 +19,26 @@
         identify: function (item) { return item.id; }
     });
 
-    var activeTab = 'favorites';
+    var SEARCH_PLACEHOLDER = '소환사명#태그 (예: Hide on bush#KR1)';
 
     // ------------------------------------------------------------
-    // 홈 — 즐겨찾기/최근검색 드롭다운
+    // 홈 — 검색 제출 (헤더 1단 검색창 · 히어로 검색창 공통)
+    //   빈 검색어 흔들기는 공통 파일이 처리한다. 여기엔 값이 있을 때만 온다.
     // ------------------------------------------------------------
-    function renderDropdown() {
-        var listEl = document.getElementById('dropdown-list');
-        if (!listEl) return;
-
-        var source = activeTab === 'favorites' ? favorites.all() : recents.all();
-        var items = source.map(function (f) {
-            return { key: f.id, text: f.id, href: '/summoner/' + encodeURIComponent(f.id) };
-        });
-
-        if (!items.length) {
-            listEl.innerHTML = '<div class="dropdown-empty">저장된 소환사가 없습니다.</div>';
-            return;
-        }
-
-        listEl.innerHTML = items.map(function (item) {
-            return '<div class="dropdown-row">' +
-                '<a class="dropdown-link" href="' + esc(App.url(item.href)) + '" data-link>' + esc(item.text) + '</a>' +
-                '<button class="dropdown-del" type="button" data-key="' + esc(item.key) + '" title="삭제">✕</button>' +
-                '</div>';
-        }).join('');
-    }
-
-    function setTab(tab) {
-        activeTab = tab;
-        var tabs = document.querySelectorAll('.dropdown-tab');
-        for (var i = 0; i < tabs.length; i++) {
-            tabs[i].classList.toggle('active', tabs[i].getAttribute('data-tab') === tab);
-        }
-        renderDropdown();
-    }
-
-    function submitSearch() {
-        var input = document.getElementById('search-input');
-        var errorEl = document.getElementById('search-error');
-        var value = (input.value || '').trim();
-
-        if (!value) {
-            if (errorEl) {
-                errorEl.textContent = '소환사명을 입력해 주세요. (예: Hide on bush#KR1)';
-                errorEl.style.display = 'block';
-            }
-            App.ui.shake(document.getElementById('search-box'));
-            return;
-        }
-        if (errorEl) errorEl.style.display = 'none';
+    function submitSearch(query) {
+        var value = (query || '').trim();
+        if (!value) return;
+        if (window.DoguUI) DoguUI.showSearchError('');
         hideSuggest();
         App.navigate('/summoner/' + encodeURIComponent(value));
+    }
+
+    // 공통 드롭다운(즐겨찾기/최근 검색)에 넘길 어댑터. 저장 형식은 { id } 그대로다.
+    function listAdapter(list) {
+        return {
+            all: function () { return list.all(); },
+            remove: function (key) { list.remove({ id: key }); }
+        };
     }
 
     // ------------------------------------------------------------
@@ -102,7 +70,7 @@
     }
 
     function onSearchInput() {
-        var input = document.getElementById('search-input');
+        var input = document.getElementById('dogu-search-input');
         var q = (input.value || '').trim();
         if (suggestTimer) clearTimeout(suggestTimer);
         if (q.length < 2) { hideSuggest(); return; }
@@ -542,12 +510,10 @@
     // ------------------------------------------------------------
     App.pages = {
         home: function () {
-            renderDropdown();
             hideSuggest();
-            var input = document.getElementById('search-input');
+            var input = document.getElementById('dogu-search-input');
             if (input) input.value = '';
-            var errorEl = document.getElementById('search-error');
-            if (errorEl) errorEl.style.display = 'none';
+            if (window.DoguUI) DoguUI.showSearchError('');
         },
 
         summoner: function (ctx) {
@@ -607,16 +573,68 @@
     // ------------------------------------------------------------
     // 부팅
     // ------------------------------------------------------------
+    // dogu.gg 공통 헤더 · 히어로 · 푸터 · 404 를 끼운다 (DOGU_UI.md 4~7절)
+    function mountDoguUI() {
+        var home = App.url('/');
+        var common = { home: home, brand: 'DOGU', tld: '.GG', linkAttr: 'data-link' };
+
+        DoguUI.mountHeader({
+            site: 'tft',
+            home: home,
+            icons: App.url('/'),              // 스위처 아이콘 폴더: public/header_{key}.png → /tft/header_*.png
+            brand: common.brand, tld: common.tld, linkAttr: common.linkAttr,
+            nav: App.navItems(),
+            search: {
+                placeholder: SEARCH_PLACEHOLDER,
+                onSubmit: function (q) { submitSearch(q); }
+            }
+        });
+
+        var hero = DoguUI.mountHero('#hero', {
+            home: home,
+            brand: common.brand, tld: common.tld, linkAttr: common.linkAttr,
+            search: {
+                placeholder: SEARCH_PLACEHOLDER,
+                onSubmit: function (q) { submitSearch(q); },
+                favorites: listAdapter(favorites),
+                recents: listAdapter(recents),
+                itemLabel: function (it) { return it.id; },
+                itemKey: function (it) { return it.id; },
+                itemHref: function (it) { return App.url('/summoner/' + encodeURIComponent(it.id)); }
+            }
+        });
+
+        // 자동완성 패널은 공통 검색창 래퍼 안에 둔다 (position: relative 기준점)
+        var wrapper = hero.querySelector('.dogu-search-wrapper');
+        if (wrapper) {
+            var suggest = document.createElement('div');
+            suggest.className = 'search-suggest';
+            suggest.id = 'search-suggest';
+            wrapper.appendChild(suggest);
+        }
+
+        DoguUI.mountFooter(null, {
+            home: home,
+            brand: common.brand, tld: common.tld, linkAttr: common.linkAttr,
+            links: { terms: App.url('/terms'), privacy: App.url('/privacy') },
+            notice: esc(App.config.siteName || '') + ' is not endorsed by Riot Games and does not reflect the views or opinions of Riot Games ' +
+                'or anyone officially involved in producing or managing Riot Games properties. Riot Games and ' +
+                'Teamfight Tactics are trademarks or registered trademarks of Riot Games, Inc.',
+            contact: App.config.contactEmail || '',
+            notify: function (msg) { App.ui.showToast(msg); }
+        });
+
+        var notFound = document.getElementById('page-notfound');
+        if (notFound) notFound.innerHTML = DoguUI.notFoundHtml({ home: home, linkAttr: common.linkAttr });
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         App.router.define(App.routes);
-        App.renderNav();
+        mountDoguUI();
 
-        var searchBtn = document.getElementById('search-btn');
-        var searchInput = document.getElementById('search-input');
-        if (searchBtn) searchBtn.addEventListener('click', submitSearch);
+        var searchInput = document.getElementById('dogu-search-input');
         if (searchInput) {
             searchInput.addEventListener('keydown', function (e) {
-                if (e.key === 'Enter') submitSearch();
                 if (e.key === 'Escape') hideSuggest();
             });
             searchInput.addEventListener('input', onSearchInput);
@@ -624,24 +642,8 @@
 
         // 자동완성 바깥 클릭 시 닫기 (제안 링크 클릭은 라우터가 가로챈 뒤에 닫힌다)
         document.addEventListener('click', function (e) {
-            if (!e.target.closest('#search-suggest') && !e.target.closest('#search-box')) hideSuggest();
+            if (!e.target.closest('#search-suggest') && !e.target.closest('#dogu-search-box')) hideSuggest();
         });
-
-        var dropdown = document.getElementById('search-dropdown');
-        if (dropdown) {
-            dropdown.addEventListener('click', function (e) {
-                var tab = e.target.closest('.dropdown-tab');
-                if (tab) { setTab(tab.getAttribute('data-tab')); return; }
-
-                var del = e.target.closest('.dropdown-del');
-                if (del) {
-                    var key = del.getAttribute('data-key');
-                    if (activeTab === 'favorites') favorites.remove({ id: key });
-                    else recents.remove({ id: key });
-                    renderDropdown();
-                }
-            });
-        }
 
         // 소환사 페이지 위임 배선 (내용이 통째로 갈리므로 컨테이너에 건다)
         var summonerBody = document.getElementById('summoner-body');
@@ -729,16 +731,6 @@
             });
         }
 
-        var contact = document.getElementById('contact-link');
-        if (contact) {
-            contact.addEventListener('click', function (e) {
-                e.preventDefault();
-                var email = App.config.contactEmail || '';
-                App.ui.copyText(email, '이메일 주소(' + email + ')가 클립보드에 복사되었습니다.');
-            });
-        }
-
-        setTab('favorites');
         App.router.start();
 
         // 홈에 먼저 들어온 사용자를 위해 정적 데이터를 미리 데워 둔다

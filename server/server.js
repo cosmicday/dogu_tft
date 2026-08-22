@@ -101,7 +101,9 @@ router.get(['/', '/index.html'], sendAppShell);
 
 router.use(express.static(PUBLIC_DIR, {
     index: false,
-    setHeaders(res) {
+    setHeaders(res, filePath) {
+        // express 4 의 mime 테이블에 .avif 가 없어 octet-stream 으로 나간다 — 타입을 직접 준다
+        if (/\.avif$/i.test(filePath)) res.setHeader('Content-Type', 'image/avif');
         const versioned = res.req && res.req.query && res.req.query.v;
         res.setHeader('Cache-Control', versioned
             ? 'public, max-age=31536000, immutable'
