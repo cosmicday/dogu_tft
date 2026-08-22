@@ -106,6 +106,10 @@ if (window.DoguUI) {
 - 이미지 레이어는 **뷰포트와 같은 크기**여야 한다. 상자를 키우면 `cover` 가 확대돼 er 보다 크게 보인다. 블러를 쓰면 가장자리가 살짝 밝아지는데, 기본이 0 이라 무시한다
 - 오버레이의 px 지점(520/880/560)은 레이어가 위로 150px 삐져나가 있어 **뷰포트 기준 +150** 이다
 
+### 스크롤바 (2026-08-22 공통화)
+
+`::-webkit-scrollbar` 10px, 트랙 `--dogu-bg`, 손잡이 `--dogu-accent-dark`, hover `--dogu-accent` (Firefox 는 `scrollbar-color` 로 hover 없이). pixlol·tft 가 이미 이 모양이었고 er(회색·hover 없음)·maple(다른 색)·loa(규칙 없음)가 달라서 공통으로 올렸다. **전역 선택자라 사이트 `style.css` 에 `::-webkit-scrollbar*` 가 남아 있으면 그쪽이 이긴다** — 적용할 때 사이트 규칙을 지울 것 (내부 목록 전용 `.xxx::-webkit-scrollbar` 는 사이트 몫이라 둬도 된다)
+
 ---
 
 ## 4. 헤더

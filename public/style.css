@@ -78,10 +78,7 @@ code {
     40%, 80% { transform: translateX(6px); }
 }
 
-::-webkit-scrollbar { width: 10px; }
-::-webkit-scrollbar-track { background: var(--surface); }
-::-webkit-scrollbar-thumb { background: var(--accent-strong); border-radius: 8px; }
-::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+/* (스크롤바 — dogu-ui.css 2-1절이 액센트색으로 그린다. 이 사이트 규칙이 규격이 됐다. 2026-08-22 제거) */
 
 /* =========================================
    3. 페이지 컨테이너
