@@ -53,6 +53,17 @@ summonerCacheSchema.index({ namePartLower: 1, tierScore: -1 });
 
 const SummonerCache = mongoose.model('SummonerCache', summonerCacheSchema);
 
+/* 랭킹 스냅샷 — 갱신에 성공할 때마다 명단을 통째로 덮어쓴다 (문서 1개, key: 'ranking').
+   랭킹이 메모리에만 있으면 재배포·키 만료 한 번에 랭킹 페이지가 빈 화면이 된다.
+   부팅 때 이걸 읽어 두면 Riot 호출이 실패해도 "N시간 전 갱신" 명단을 계속 보여줄 수 있다. */
+const rankingSnapshotSchema = new mongoose.Schema({
+    key: { type: String, required: true, unique: true },   // 항상 'ranking'
+    updatedAt: { type: Number, required: true },
+    players: { type: Array, required: true }
+});
+
+const RankingSnapshot = mongoose.model('RankingSnapshot', rankingSnapshotSchema);
+
 function isDbReady() {
     return mongoose.connection.readyState === 1;
 }
@@ -96,4 +107,4 @@ function calcTierScore(tier, rank, lp) {
     return t * 1000000 + r * 10000 + (Number(lp) || 0);
 }
 
-module.exports = { connectMongo, isDbReady, MatchCache, SummonerCache, toSearchFields, calcTierScore };
+module.exports = { connectMongo, isDbReady, MatchCache, SummonerCache, RankingSnapshot, toSearchFields, calcTierScore };

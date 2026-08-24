@@ -21,7 +21,7 @@ const fs = require('fs');
 const path = require('path');
 
 const { api, isPaused, sleep } = require('./riot');
-const { isDbReady, MatchCache, SummonerCache, toSearchFields, calcTierScore } = require('./db');
+const { isDbReady, MatchCache, SummonerCache, RankingSnapshot, toSearchFields, calcTierScore } = require('./db');
 const { getStatic, profileIconUrl } = require('./tftdata');
 
 const router = express.Router();
@@ -88,6 +88,41 @@ async function loadResolvedNamesFromDb() {
     }
 }
 
+// 랭킹 스냅샷 — 메모리 명단을 Mongo에 박제하고, 부팅 때 되살린다.
+//   Riot 키가 만료되면 updateRanking()이 계속 실패하는데, 스냅샷이 없으면
+//   랭킹 페이지가 "준비 중입니다"로 굳는다 (2026-08-24 운영에서 39시간 지속).
+// 명단 전체(마스터까지 1.1만 명)를 넣으면 문서가 1.7MB라 10분마다 그만큼 쓰게 된다.
+// 화면은 상위 1000명, 메타 수집 풀은 상위 300명만 쓰므로 2000명이면 남는다 (약 310KB).
+const SNAPSHOT_LIMIT = 2000;
+
+async function saveRankingSnapshot() {
+    if (!isDbReady() || rankingPlayers.length === 0) return;
+    try {
+        await RankingSnapshot.findOneAndUpdate(
+            { key: 'ranking' },
+            { key: 'ranking', updatedAt: rankingUpdatedAt, players: rankingPlayers.slice(0, SNAPSHOT_LIMIT) },
+            { upsert: true }
+        );
+    } catch (err) {
+        console.error(`[Task] 랭킹 스냅샷 저장 실패: ${err.message}`);
+    }
+}
+
+async function loadRankingSnapshot() {
+    if (!isDbReady() || rankingPlayers.length > 0) return;
+    try {
+        const doc = await RankingSnapshot.findOne({ key: 'ranking' }).lean();
+        if (!doc || !Array.isArray(doc.players) || doc.players.length === 0) return;
+        rankingPlayers = doc.players;
+        rankingUpdatedAt = doc.updatedAt || 0;
+        memCache.delete('ranking_payload');
+        const ageH = Math.round((Date.now() - rankingUpdatedAt) / 3600000);
+        console.log(`[Task] 랭킹 스냅샷 복원 (${rankingPlayers.length}명, ${ageH}시간 전 갱신)`);
+    } catch (err) {
+        console.error(`[Task] 랭킹 스냅샷 복원 실패: ${err.message}`);
+    }
+}
+
 // 504 같은 일시 오류 재시도 (pixlol fetchRankTier 이식)
 async function fetchRankTier(tier, tries = 3) {
     for (let attempt = 1; attempt <= tries; attempt++) {
@@ -140,6 +175,7 @@ async function updateRanking() {
             rankingUpdatedAt = Date.now();
             memCache.delete('ranking_payload');
             console.log(`[Task] TFT 랭킹 갱신 완료 (총 ${combined.length}명)`);
+            saveRankingSnapshot();   // 실패해도 갱신 자체엔 영향이 없으므로 기다리지 않는다
         }
     } catch (err) {
         console.error(`[Task] 랭킹 갱신 실패: ${err.message}`);
@@ -693,6 +729,7 @@ router.get('/static', (req, res) => {
 async function startRiotJobs() {
     loadResolvedNamesFromDisk();
     await loadResolvedNamesFromDb();
+    await loadRankingSnapshot();   // 스냅샷 먼저 — Riot 호출이 실패해도 랭킹이 비지 않는다
     await updateRanking();
     resolveNamesInBackground();   // 오래 걸리므로 기다리지 않는다
 
