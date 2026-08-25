@@ -107,19 +107,26 @@
             '<div class="dogu-switcher-list" role="menu">' + items + '</div></div>';
     }
 
-    function bindSwitcher(root) {
+    /* onOpen: 스위처를 열기 직전에 부른다 — 모바일 햄버거 메뉴를 접는 데 쓴다 (2026-08-25).
+       두 버튼 다 stopPropagation 으로 클릭을 삼켜서 서로의 "바깥 클릭 → 닫힘" 리스너가 안 돌기 때문에
+       한쪽을 열 때 다른 쪽을 명시적으로 닫아야 둘이 겹쳐 펼쳐지지 않는다. 닫기 함수를 돌려준다 */
+    function bindSwitcher(root, onOpen) {
         var picker = root.querySelector('#dogu-switcher');
         var btn = root.querySelector('#dogu-switcher-btn');
-        if (!picker || !btn) return;
-        btn.addEventListener('click', function (e) {
-            e.stopPropagation();
-            var open = picker.classList.toggle('open');
-            btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-        });
-        document.addEventListener('click', function () {
+        if (!picker || !btn) return function () {};
+        function close() {
             picker.classList.remove('open');
             btn.setAttribute('aria-expanded', 'false');
+        }
+        btn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            var willOpen = !picker.classList.contains('open');
+            if (willOpen && onOpen) onOpen();
+            picker.classList.toggle('open', willOpen);
+            btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
         });
+        document.addEventListener('click', close);
+        return close;
     }
 
     /* ---------- 헤더 ---------- */
@@ -495,21 +502,25 @@
             header.innerHTML = headerHtml(opts);
             if (host) host.appendChild(header);
             else document.body.insertBefore(header, document.body.firstChild);
-            bindSwitcher(header);
             /* 모바일 햄버거: 버튼이 dogu-menu-open 을 토글하고, 바깥/메뉴 항목 클릭이 닫는다
                (네비 클릭은 각 사이트 라우터가 preventDefault 만 하고 전파는 살려 두므로
-                document 리스너까지 올라와 저절로 닫힌다) */
+                document 리스너까지 올라와 저절로 닫힌다).
+               게임 스위처와는 상호 배타 — 하나를 열면 다른 하나는 접힌다 (2026-08-25) */
             var menuBtn = header.querySelector('#dogu-menu-btn');
+            function closeMenu() {
+                header.classList.remove('dogu-menu-open');
+                if (menuBtn) menuBtn.setAttribute('aria-expanded', 'false');
+            }
+            var closeSwitcher = bindSwitcher(header, closeMenu);
             if (menuBtn) {
                 menuBtn.addEventListener('click', function (e) {
                     e.stopPropagation();
-                    var open = header.classList.toggle('dogu-menu-open');
-                    menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+                    var willOpen = !header.classList.contains('dogu-menu-open');
+                    if (willOpen) closeSwitcher();
+                    header.classList.toggle('dogu-menu-open', willOpen);
+                    menuBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
                 });
-                document.addEventListener('click', function () {
-                    header.classList.remove('dogu-menu-open');
-                    menuBtn.setAttribute('aria-expanded', 'false');
-                });
+                document.addEventListener('click', closeMenu);
             }
             var form = header.querySelector('#dogu-gnb-search');
             if (form) {
