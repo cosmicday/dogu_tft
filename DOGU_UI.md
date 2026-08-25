@@ -171,6 +171,8 @@ DoguUI.mountHeader({
 
 `DoguUI.mountHero(container, opts)` — 로고(52px, 768px 이하 36px) + 알약 검색창 + 포커스 드롭다운. 히어로 로고도 헤더 로고처럼 `opts.home` 으로 가는 링크다 (pointer, 드래그 선택 불가, 밑줄·색 변화 없음).
 
+**모바일 입력창 글자 16px** (2026-08-25): iOS 사파리는 포커스한 input 글자가 16px 미만이면 화면을 확대한다. 그래서 768px 이하에서 `.dogu-search-input`·`.dogu-gnb-search input` 은 16px 이다 (데스크톱 14/12.5px). 사이트 자체 input 을 모바일에서 쓰는 곳(loa 입찰·maple 길드 등)은 각 사이트 CSS 에서 같은 규칙을 적용해야 한다. `maximum-scale=1` 로 막지 말 것 — 핀치 줌까지 죽는다.
+
 **`opts.mascot`** (2026-08-25): 로고 왼쪽에 붙는 사이트 마스코트 이미지 경로 — 각 사이트의 파비콘(모자만 다른 도구 캐릭터)을 준다. er `favicon-192.png` · maple `icon-192.png` · loa `apple-touch-icon.png` · tft `favicon.png` · pixlol `/favicon_lol_180.png`. 크기는 글자에 비례(`height: 1.25em`)하므로 따로 맞출 게 없다. 헤더 로고에는 붙이지 않는다 — 헤더는 로고 오른쪽에 게임 스위처 아이콘이 이미 있어서 아이콘 둘이 글자를 끼는 모양이 된다.
 
 **히어로 상자(`container`)의 규격: 헤더 바로 밑 · 화면 폭 전체 · 패딩 0.** 검색창 위치는 `.dogu-hero-inner` 의 패딩(74/62px)과 `.dogu-search-wrapper` 의 `max-width: 600px; margin: 26px auto 0` 만으로 정해져야 5개 사이트에서 같은 자리에 놓인다. 상자나 그 조상에 패딩·폭 제한이 있으면 그만큼 검색창이 내려앉거나 좁아지는데, 1280px 에서는 가운데 정렬 덕에 티가 안 나고 **모바일에서만 검색창 폭이 달라진다** (실측: 640px 에서 er·maple 600px, loa·tft 568px, pixlol 552px). `mountHero()` 가 마운트 직후 상자와 조상의 패딩·폭을 재서 벗어나면 콘솔에 `[dogu-ui] 히어로 상자가 규격…` 경고를 찍는다 — **적용 뒤 콘솔을 한 번 볼 것.** 정석은 `#hero` 를 **`main` 밖, 헤더와 `main` 사이**에 두는 것이다 (1절 골격). 그러면 페이지 컨테이너가 숨겨 주지 않으므로 **공통 CSS 가 `body.dogu-home` 이 없을 때 `.dogu-hero` 를 `display: none` 으로 숨긴다** — 라우터의 `DoguUI.setHome()` 연결(3절)이 곧 히어로 표시 조건이다. loa·tft·pixlol 은 2026-08-22 에 이렇게 옮겼고, er·maple 은 `#page-home` 안에 있어도 부모 패딩이 0 이라 그대로 뒀다.

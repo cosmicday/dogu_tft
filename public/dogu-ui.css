@@ -734,6 +734,9 @@ body.dogu-body:not(.dogu-home) .dogu-hero { display: none; }
     .dogu-hero-mark { font-size: 36px; }
     .dogu-search-wrapper { margin-top: 20px; }
     .dogu-search-box { height: 42px; }
+    /* iOS 사파리는 input 글자가 16px 미만이면 포커스 때 화면을 확대한다 (2026-08-25). 뷰포트 maximum-scale 로 막는 건
+       핀치 줌까지 죽이므로 안 쓰고, 입력창 글자만 16px 로 올린다. 데스크톱은 14px 그대로 */
+    .dogu-search-input, .dogu-gnb-search input { font-size: 16px; }
     .dogu-dropdown-hint { display: none; }
     .dogu-search-shortcut { display: none; }   /* 모바일엔 키보드가 없다 */
     .dogu-toast { top: auto; bottom: 20px; }
