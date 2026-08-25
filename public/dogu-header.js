@@ -49,8 +49,11 @@
     }
 
     /* 로고 조각. brand = 'DOGU' / tld = '.GG' (pixlol 은 'PIXLOL' / '.KR') */
-    function brandHtml(opts, cls) {
+    /* mascot: 히어로 로고 왼쪽에 붙는 사이트 마스코트(파비콘) 경로. 히어로만 쓰고 헤더는 안 쓴다 (2026-08-25) —
+       헤더는 로고 바로 오른쪽에 게임 스위처 아이콘이 이미 있어서 아이콘 둘이 글자를 끼게 된다 */
+    function brandHtml(opts, cls, mascot) {
         return '<a class="' + cls + '" href="' + esc(opts.home || '/') + '"' + linkAttr(opts) + '>' +
+            (mascot ? '<img class="dogu-hero-mascot" src="' + esc(mascot) + '" alt="" width="64" height="64" draggable="false">' : '') +
             esc(opts.brand || 'DOGU') + '<em>' + esc(opts.tld || '.GG') + '</em></a>';
     }
 
@@ -183,7 +186,7 @@
             ? '<span class="dogu-search-shortcut"><kbd>/</kbd> 키를 눌러 바로 검색할 수 있습니다.</span>'
             : s.note;
         return '<div class="dogu-wrap dogu-hero-inner">' +
-            brandHtml(opts, 'dogu-hero-mark') +
+            brandHtml(opts, 'dogu-hero-mark', opts.mascot) +
             '<div class="dogu-search-wrapper">' +
                 '<form class="dogu-search-box" id="dogu-search-box" autocomplete="off">' +
                     '<input type="text" class="dogu-search-input" id="dogu-search-input" placeholder="' + esc(placeholder) + '" autocomplete="off">' +

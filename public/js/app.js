@@ -592,6 +592,7 @@
 
         var hero = DoguUI.mountHero('#hero', {
             home: home,
+            mascot: App.url('/favicon.png'),   // 히어로 로고 왼쪽 마스코트 (공통 옵션)
             brand: common.brand, tld: common.tld, linkAttr: common.linkAttr,
             search: {
                 placeholder: SEARCH_PLACEHOLDER,

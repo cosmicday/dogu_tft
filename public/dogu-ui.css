@@ -454,6 +454,19 @@ body.dogu-body:not(.dogu-home) .dogu-hero { display: none; }
     -webkit-user-select: none;
 }
 .dogu-hero-mark em { font-style: italic; color: var(--dogu-accent); }
+/* 히어로 로고 왼쪽 마스코트 (mountHero 의 opts.mascot). 글자 크기에 비례(1.25em)해서 모바일 36px 에선 45px, 데스크톱 52px 에선 65px.
+   inline-block + vertical-align 으로 글자와 한 줄에 놓는다 — flex 로 바꾸면 em(.GG) 이 따로 떨어진다 */
+.dogu-hero-mascot {
+    display: inline-block;
+    height: 1.25em;
+    width: auto;
+    vertical-align: -0.3em;
+    margin-right: 0.2em;
+    filter: drop-shadow(0 2px 6px rgba(4, 10, 24, 0.5));
+    pointer-events: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
 
 .dogu-search-wrapper { position: relative; max-width: 600px; margin: 26px auto 0; text-align: left; }
 
@@ -715,8 +728,11 @@ body.dogu-body:not(.dogu-home) .dogu-hero { display: none; }
     .dogu-gnb.dogu-menu-open .dogu-nav-item.active::after { left: 18px; right: auto; width: 26px; }
     .dogu-nav-home { display: none; }   /* 홈은 로고가 맡는다 */
 
-    .dogu-hero-inner { padding: 32px 16px 28px; }
-    .dogu-hero-mark { font-size: 24px; }
+    /* 히어로 로고 24→36px (2026-08-25). 24px 은 헤더 로고(18px)의 1.3배라 같은 글자가 60px 간격으로 두 번 찍힌 것처럼 보였다.
+       36px 이면 데스크톱 비율(22→52, 2.4배)에 가깝다. 검색창 위 간격은 26→20 으로 줄여 로고가 검색창의 간판으로 붙게 */
+    .dogu-hero-inner { padding: 38px 16px 30px; }
+    .dogu-hero-mark { font-size: 36px; }
+    .dogu-search-wrapper { margin-top: 20px; }
     .dogu-search-box { height: 42px; }
     .dogu-dropdown-hint { display: none; }
     .dogu-search-shortcut { display: none; }   /* 모바일엔 키보드가 없다 */
