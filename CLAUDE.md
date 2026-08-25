@@ -9,7 +9,7 @@
 ## dogu.gg 공통 UI (2026-08-22)
 
 헤더(2단·게임 스위처·검색) · 히어로 검색창 · 푸터 · 404 · 배경 구조는 `public/dogu-ui.css` + `public/dogu-header.js` 가 그린다.
-**둘 다 복사본이라 이 폴더에서 고치지 말 것** — 원본은 `dogu_er/dogu-ui/`(git HEAD), 사양·체크리스트는 `dogu_er/dogu-ui/DOGU_UI.md`.
+**둘 다 복사본이라 이 폴더에서 고치지 말 것** — 원본은 `dogu_template/dogu-ui/`(git HEAD), 사양·체크리스트는 `dogu_template/dogu-ui/DOGU_UI.md`.
 손대기 전에 5곳 md5 가 같은지 본다 (`DOGU_UI.md` 11-0). 이 폴더의 `DOGU_UI.md`·`DOGU_UI_PLAN.md` 는 옛 복사본이니 원본 쪽을 볼 것.
 
 - 마운트는 `public/js/app.js` 의 `mountDoguUI()`. 스위처 아이콘 경로 옵션 이름은 **`iconBase`** (`App.url('/')`). 한때 `icons` 로 갈라졌던 적이 있다

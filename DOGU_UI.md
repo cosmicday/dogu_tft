@@ -1,6 +1,6 @@
 # DOGU_UI — 공통 UI 사양서
 
-`dogu-ui.css` / `dogu-header.js` 두 파일의 사양. 원본은 `dogu_er/dogu-ui/` 에 있고, 각 사이트의 `public/` 에 **복사해서** 쓴다. 사이트 폴더에서 직접 고치지 말 것 — 원본을 고치고 다시 복사한다.
+`dogu-ui.css` / `dogu-header.js` 두 파일의 사양. 원본은 `dogu_template/dogu-ui/` 에 있고 (2026-08-25 `dogu_er/dogu-ui/` 에서 이동), 각 사이트의 `public/` 에 **복사해서** 쓴다. 사이트 폴더에서 직접 고치지 말 것 — 원본을 고치고 `dogu_template/sync-ui.ps1`(또는 `npm run sync:ui`)로 다시 복사한다.
 
 모든 수치는 `dogu_er/public/style.css`(2026-08-22) 에서 그대로 가져왔다. 사양의 근거는 `DOGU_UI_PLAN.md`.
 
@@ -51,6 +51,8 @@
 | `--dogu-accent` | `#45b3f2` | 액센트 밝은쪽. 로고 `.GG`·네비 활성 밑줄·스위처 마크·포커스 테두리·검색 버튼 그라데이션 시작 |
 | `--dogu-accent-dark` | `#1f6fd0` | 액센트 어두운쪽. 검색 버튼 그라데이션 끝 |
 | `--dogu-bg-image` | `none` | 배경 이미지 `url(...)`. 사이트가 반드시 지정 |
+| `search.suggest(q)` (옵션) | — | 히어로 검색창 자동완성. `[{key, label, sub, href}]` 또는 그 Promise 를 돌려주면 입력 중에 드롭다운이 결과로 바뀐다(200ms 디바운스, 늦게 온 응답은 버림). **안 주면 예전 그대로** 즐겨찾기/최근만 뜬다.<br>★ **`null` 을 돌려주면 자동완성을 안 켠다** — 빈 배열(`[]`)과 구분한다. `[]` 는 "찾아봤는데 없음"이라 안내가 뜨고, `null` 은 아무 일도 없던 것처럼 즐겨찾기/최근이 그대로 남는다. 글자 수가 모자랄 때 쓰라고 만든 것 (er 은 한글 2자·영숫자 3자) |
+| `--dogu-bg-pos` | `center center` | 배경 초점(`background-position`). 일러스트마다 인물 위치가 달라서 사이트가 잡는다. **다만 이걸로 움직일 수 있는 폭은 뷰포트와 이미지의 비율 차이만큼뿐이다** — 그보다 크게 옮겨야 하면 이미지를 크롭하는 게 낫다 (er 이 그렇게 했다) |
 | `--dogu-bg-blur` | `0px` | 배경 이미지 블러. **기본 0**. 꼭 필요할 때만 |
 | `--dogu-overlay-rgb` | `6, 11, 26` | 오버레이 색 (쉼표 구분 RGB) |
 | `--dogu-overlay-home-top` | `0.52` | 홈 오버레이 농도, 맨 위 |
@@ -72,7 +74,7 @@
 
 ```
 body.dogu-body           background: var(--dogu-bg)           ← 루트 캔버스로 승격
-body.dogu-body::before   fixed, inset 0, z-index -2          ← 이미지 (cover, filter: blur(var(--dogu-bg-blur)))
+body.dogu-body::before   fixed, inset 0, z-index -2          ← 이미지 (var(--dogu-bg-pos) / cover, filter: blur(var(--dogu-bg-blur)))
 body.dogu-body::after    fixed, inset -150px, z-index -1      ← 오버레이 그라데이션
 ```
 
@@ -155,10 +157,12 @@ DoguUI.mountHeader({
 
 현재 사이트(`opts.site`)는 `.active` 로 표시되고 링크가 아니다. 버튼 클릭으로 열고, 바깥 클릭으로 닫힌다. 랜딩(dogu.gg)에는 헤더 자체를 안 쓴다.
 
-**아이콘**: 각 항목은 아이콘(32×32) + 게임명, 버튼은 현재 게임 아이콘(22×22) + 게임명. 파일은 **각 사이트 `public/` 에 `header_lol.png` `header_er.png` `header_maple.png` `header_loa.png` `header_tft.png` 다섯 개 전부** 복사해 둔다 (256×256 투명 PNG, 다크 배경 전제, 여백은 이미 맞춰져 있어 CSS 에서 padding·crop 을 더하지 않는다). `opts.iconBase` 가 경로 앞부분이다 — er 은 `App.url('/')` = `/er/`. `<img>` 에 `width`/`height` 속성을 박아 이미지가 늦게 와도 레이아웃이 안 밀리고, `alt` 에 게임 이름이 들어간다. 현재 게임 아이콘만 불투명, 나머지는 `opacity .55`(hover 시 1). 768px 이하에서는 게임명을 숨기고 아이콘만 보인다.
+**아이콘**: 각 항목은 아이콘(32×32) + 게임명, 버튼은 현재 게임 아이콘(22×22) + 게임명. 파일은 **각 사이트 `public/` 에 `header_lol.png` `header_er.png` `header_maple.png` `header_loa.png` `header_tft.png` 다섯 개 전부** 복사해 둔다 (256×256 투명 PNG, 다크 배경 전제, 여백은 이미 맞춰져 있어 CSS 에서 padding·crop 을 더하지 않는다). `opts.iconBase` 가 경로 앞부분이다 — er 은 `App.url('/')` = `/er/`. `<img>` 에 `width`/`height` 속성을 박아 이미지가 늦게 와도 레이아웃이 안 밀리고, `alt` 에 게임 이름이 들어간다. 현재 게임 아이콘만 불투명, 나머지는 `opacity .55`(hover 시 1). 768px 이하에서는 **버튼만** 아이콘으로 줄이고 **펼친 목록은 아이콘+게임명 그대로다** (2026-08-24 — 예전엔 목록 이름까지 숨겼는데 아이콘만으로는 게임이 안 갈렸다).
 
 - **옵션 이름은 `iconBase` 하나다.** 값은 `/tft/` 처럼 슬래시로 끝나는 경로 앞부분(루트 사이트는 `/`). 2026-08-22 에 tft 복사본이 `icons: '/tft'` 로 갈라진 적이 있어 공통 파일이 `icons` 도 받고 끝 슬래시도 맞춰 주지만, 새로 쓰는 곳은 `iconBase` 로
 - `iconBase` 를 안 주면 액센트색 글자 타일(`.dogu-game-mark`, 첫 글자)로 떨어진다. 아이콘 파일을 못 둔 사이트의 임시 모습이지 규격은 아니다
+- **`gamesOrigin` 옵션 (2026-08-24)**: GAMES 의 내부 주소(`/er` 등)는 dogu.gg 기준 상대 경로다. **dogu.gg 밖에서 도는 사이트(pixlol)는 `mountHeader` 에 `gamesOrigin: 'https://dogu.gg'` 를 줘야** 다른 게임 링크가 절대 주소가 된다 — 안 주면 pixlol.kr/er 로 가서 그 사이트 SPA 가 받아 "다른 게임을 눌러도 제자리" 가 된다. dogu.gg 계열 사이트는 안 준다 (상대 경로 유지 — 절대 주소면 로컬에서 프로덕션으로 튄다)
+- **모바일 이중 헤더 정리 (2026-08-24)**: 768px 이하에서 2단 네비(`.dogu-gnb-main`)를 접고, 1단 오른쪽에 햄버거(`.dogu-menu-btn`, 세 줄)가 생긴다. 누르면 헤더에 `dogu-menu-open` 클래스가 붙고 2단이 1단 아래 **세로 메뉴 패널**(absolute)로 펼쳐진다. 바깥 클릭·메뉴 항목 클릭이 닫는다 (사이트 라우터가 preventDefault 만 하고 전파를 살려 두는 규약이라 document 리스너가 받는다). **마크업·`data-nav`·라우터 연결은 데스크톱과 같은 요소**라 `setActiveNav` 가 그대로 동작한다. `.dogu-nav-home`(⌂)은 모바일에서 숨긴다 — 홈은 로고가 맡는다
 - **스위처 마크업을 사이트 쪽에서 DOM 으로 덧칠하지 말 것** (pixlol 이 `decorateSwitcherIcons()` 로 `.pix-game-*` 를 끼워 넣었다가 아이콘 크기·간격이 다른 사이트와 어긋났다. 2026-08-22 제거). 원하는 게 있으면 원본을 고쳐 다시 복사한다
 
 ---
@@ -274,14 +278,13 @@ el.innerHTML = DoguUI.comingSoonHtml({ home: '/er/', linkAttr: 'data-link' });
 ```bash
 # Git Bash. 해시가 한 줄(=전부 동일)이어야 한다. 두 줄 이상이면 드리프트
 cd /c/Users/admin/Desktop
-md5sum dogu_er/dogu-ui/dogu-ui.css   dogu_*/public/dogu-ui.css   pixlol.kr/public/dogu-ui.css   | awk '{print $1}' | sort | uniq -c
-md5sum dogu_er/dogu-ui/dogu-header.js dogu_*/public/dogu-header.js pixlol.kr/public/dogu-header.js | awk '{print $1}' | sort | uniq -c
-git -C dogu_er status --short dogu-ui    # 원본 작업본이 미커밋 상태면 어느 세션이 덮었는지부터 확인
+md5sum dogu_template/dogu-ui/dogu-ui.css   dogu_*/public/dogu-ui.css   pixlol.kr/public/dogu-ui.css   | awk '{print $1}' | sort | uniq -c
+md5sum dogu_template/dogu-ui/dogu-header.js dogu_*/public/dogu-header.js pixlol.kr/public/dogu-header.js | awk '{print $1}' | sort | uniq -c
+git -C dogu_template status --short dogu-ui    # 원본 작업본이 미커밋 상태면 어느 세션이 덮었는지부터 확인
 ```
 
-- 원본은 **항상 `dogu_er/dogu-ui/` 의 git HEAD** 다. 다른 사이트 세션에서 공통 파일을 고쳤으면 그 변경을 원본에 합치고 커밋한 뒤 5곳에 복사한다. 사이트 `public/` 에서 고친 것을 원본으로 역복사하지 말 것
-- 복사는 다섯 곳 한 번에 (이 문서도 각 저장소 루트에 복사본이 있으니 같이):
-  `for d in dogu_er dogu_maple dogu_loa dogu_tft pixlol.kr; do cp dogu_er/dogu-ui/dogu-ui.css dogu_er/dogu-ui/dogu-header.js $d/public/; done; for d in dogu_maple dogu_loa dogu_tft pixlol.kr; do cp dogu_er/dogu-ui/DOGU_UI.md $d/; done`
+- 원본은 **항상 `dogu_template/dogu-ui/` 의 git HEAD** 다. 다른 사이트 세션에서 공통 파일을 고쳤으면 그 변경을 원본에 합치고 커밋한 뒤 5곳에 복사한다. 사이트 `public/` 에서 고친 것을 원본으로 역복사하지 말 것
+- 복사는 다섯 곳 한 번에 — `dogu_template` 에서 `npm run sync:ui` (= `sync-ui.ps1`, bash 는 `./sync-ui.sh`). js·css 는 각 `public/` 으로, 이 문서는 각 저장소 루트로 간다. 사이트 하나만은 `.sync-ui.ps1 dogu_maple`
 
 ### 11-1. 격리 원칙 — 공통 파일이 지켜야 하는 것
 

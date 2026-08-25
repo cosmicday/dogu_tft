@@ -15,6 +15,7 @@
     --dogu-accent: #45b3f2;                   /* 액센트 밝은쪽: 로고 .GG · 활성 표시 · 포커스 테두리 */
     --dogu-accent-dark: #1f6fd0;              /* 액센트 어두운쪽: 검색 버튼 그라데이션 끝 */
     --dogu-bg-image: none;                    /* url('./img/bg.webp') — 사이트가 지정 */
+    --dogu-bg-pos: center center;             /* 배경 초점. 일러스트마다 인물 위치가 달라 사이트가 덮어쓴다 */
     --dogu-bg-blur: 0px;                      /* 배경 이미지 블러. 기본 0 (오버레이만으로 가독성 확보) */
     --dogu-overlay-rgb: 6, 11, 26;            /* 오버레이 색 (er 남색) */
     /* 홈 오버레이 농도 — 위(히어로 구간)는 옅게, 본문부터 진하게. px 는 뷰포트 기준 +150 */
@@ -75,7 +76,7 @@ body.dogu-body::before {
     right: 0;
     bottom: 0;
     z-index: -2;
-    background: var(--dogu-bg-image) no-repeat center center / cover var(--dogu-bg);
+    background: var(--dogu-bg-image) no-repeat var(--dogu-bg-pos) / cover var(--dogu-bg);
     filter: blur(var(--dogu-bg-blur));
     pointer-events: none;
 }
@@ -180,6 +181,31 @@ html { scrollbar-color: var(--dogu-accent-dark) var(--dogu-bg); }   /* Firefox (
 .dogu-gnb-utility { background: var(--dogu-gnb-top); }
 .dogu-gnb-utility-inner { display: flex; align-items: center; gap: 12px; height: 62px; }
 .dogu-gnb-right { margin-left: auto; display: flex; align-items: center; gap: 8px; flex: none; }
+
+/* 모바일 햄버거 버튼. 데스크톱에서는 숨기고 8절 반응형에서 켠다 (2026-08-24) */
+.dogu-menu-btn {
+    display: none;
+    flex: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: none;
+    cursor: pointer;
+}
+.dogu-menu-btn:hover { background: rgba(255, 255, 255, 0.12); }
+.dogu-menu-bar {
+    display: block;
+    width: 20px;
+    height: 2px;
+    border-radius: 1px;
+    background: var(--dogu-gnb-text-strong);
+}
 
 /* 게임 스위처 */
 .dogu-switcher { position: relative; flex: none; }
@@ -565,6 +591,15 @@ body.dogu-body:not(.dogu-home) .dogu-hero { display: none; }
     cursor: pointer;
 }
 .dogu-dropdown-del:hover { color: #f0687e; }
+/* 자동완성 결과의 부제 (RP 등). 이름 오른쪽에 옅게 */
+.dogu-dropdown-sub {
+    margin-left: 8px;
+    font-style: normal;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--dogu-text-3, #7c8aa5);
+}
+
 .dogu-dropdown-empty { padding: 20px; text-align: center; color: var(--dogu-text-3); font-size: 12.5px; }
 
 @keyframes doguShakeX {
@@ -637,14 +672,49 @@ body.dogu-body:not(.dogu-home) .dogu-hero { display: none; }
 }
 @media (max-width: 768px) {
     .dogu-gnb-utility-inner { height: 52px; gap: 8px; }
-    /* 좁은 화면: 스위처는 아이콘만 (버튼·목록 둘 다). 이름은 alt/title 로 남는다 */
-    .dogu-game-name { display: none; }
+    /* 좁은 화면: 스위처 **버튼**만 아이콘으로 줄인다. 펼친 목록은 아이콘+게임명 그대로
+       (2026-08-24 — 예전엔 목록 이름까지 숨겼는데 아이콘만으로는 어떤 게임인지 안 갈렸다) */
+    .dogu-switcher-btn .dogu-game-name { display: none; }
     .dogu-switcher-btn { padding: 0 10px 0 6px; }
-    .dogu-switcher-list { min-width: 0; }
-    .dogu-game-item { padding: 6px; justify-content: center; }
     .dogu-gnb-search { display: none; }
     .dogu-brand { font-size: 18px; }
     .dogu-gnb-aside { display: none; }
+
+    /* ★ 모바일 이중 헤더 정리 (2026-08-24): 2단(⌂ + 가로 메뉴 줄)은 접고, 1단 오른쪽
+       햄버거(.dogu-menu-btn)가 세로 메뉴를 펼친다. 마크업·라우터 연결은 그대로라
+       setActiveNav(data-nav)도 데스크톱과 같은 요소를 본다 */
+    .dogu-menu-btn { display: inline-flex; }
+    .dogu-gnb-main { display: none; }
+    .dogu-gnb.dogu-menu-open .dogu-gnb-main {
+        display: block;
+        position: absolute;           /* .dogu-gnb 가 sticky(=positioned)라 그 기준이다 */
+        top: 100%;
+        left: 0;
+        right: 0;
+        border-bottom: 1px solid rgba(140, 190, 250, 0.14);
+        box-shadow: 0 14px 26px rgba(0, 0, 0, 0.45);
+        /* 부모의 backdrop-filter 는 헤더 상자 밖(펼친 패널)까지 안 덮는다 — 패널이 자기 걸 갖는다 */
+        backdrop-filter: blur(14px) saturate(1.3);
+        -webkit-backdrop-filter: blur(14px) saturate(1.3);
+    }
+    .dogu-gnb.dogu-menu-open .dogu-gnb-main-inner {
+        flex-direction: column;
+        align-items: stretch;
+        height: auto;
+        padding: 4px 0 8px;
+        gap: 0;
+    }
+    .dogu-gnb.dogu-menu-open .dogu-nav {
+        flex-direction: column;
+        overflow: visible;
+        white-space: normal;
+        gap: 0;
+    }
+    .dogu-gnb.dogu-menu-open .dogu-nav-item { height: auto; padding: 12px 18px; font-size: 15px; }
+    /* 밑줄(active::after)은 세로 목록에선 글자 밑 짧은 선으로 */
+    .dogu-gnb.dogu-menu-open .dogu-nav-item.active::after { left: 18px; right: auto; width: 26px; }
+    .dogu-nav-home { display: none; }   /* 홈은 로고가 맡는다 */
+
     .dogu-hero-inner { padding: 32px 16px 28px; }
     .dogu-hero-mark { font-size: 24px; }
     .dogu-search-box { height: 42px; }

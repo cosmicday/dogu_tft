@@ -20,6 +20,8 @@
     ];
 
     var TEXT = {
+        searching: '찾는 중…',
+        noMatch: '일치하는 이름이 없습니다.',
         favorites: '★ 즐겨찾기',
         recents: '🕘 최근 검색',
         hint: '각각 10개까지 저장됩니다.',
@@ -79,15 +81,21 @@
             ' width="' + size + '" height="' + size + '" decoding="async">';
     }
 
-    function switcherHtml(site, iconBase) {
+    function switcherHtml(site, iconBase, opts) {
         var cur = GAMES.filter(function (g) { return g.key === site; })[0] || GAMES[1];
         var items = GAMES.map(function (g) {
             var inner = gameIcon(g, 32, iconBase) + '<span class="dogu-game-name">' + esc(g.name) + '</span>';
             if (g.key === cur.key) {
                 return '<span class="dogu-game-item active" aria-current="page">' + inner + '</span>';
             }
-            return '<a class="dogu-game-item" href="' + esc(g.href) + '"' +
-                (g.external ? ' rel="noopener"' : '') + ' title="' + esc(g.name) + '">' + inner + '</a>';
+            /* ★ GAMES 의 내부 주소('/er' 등)는 dogu.gg 기준 상대 경로다. dogu.gg 밖에서 도는
+               사이트(pixlol)는 opts.gamesOrigin('https://dogu.gg')을 줘서 절대 주소로 만든다 —
+               안 그러면 pixlol.kr/er 로 가서 SPA 가 받아 "다른 게임을 눌러도 제자리" 가 된다 (2026-08-24) */
+            var href = (g.external || !opts || !opts.gamesOrigin)
+                ? g.href
+                : String(opts.gamesOrigin).replace(/\/$/, '') + g.href;
+            return '<a class="dogu-game-item" href="' + esc(href) + '"' +
+                ((g.external || (opts && opts.gamesOrigin)) ? ' rel="noopener"' : '') + ' title="' + esc(g.name) + '">' + inner + '</a>';
         }).join('');
         return '<div class="dogu-switcher" id="dogu-switcher">' +
             '<button class="dogu-switcher-btn" type="button" id="dogu-switcher-btn" aria-haspopup="true" aria-expanded="false" title="' + esc(cur.name) + '">' +
@@ -123,7 +131,7 @@
         var placeholder = (opts.search && opts.search.placeholder) || '검색어를 입력해주세요.';
         return '<div class="dogu-gnb-utility"><div class="dogu-wrap dogu-gnb-utility-inner">' +
             brandHtml(opts, 'dogu-brand') +
-            switcherHtml(opts.site, iconBaseOf(opts)) +
+            switcherHtml(opts.site, iconBaseOf(opts), opts) +
             '<div class="dogu-gnb-right">' +
                 (opts.search === false ? '' :
                 '<form class="dogu-gnb-search" id="dogu-gnb-search" autocomplete="off">' +
@@ -131,6 +139,11 @@
                     '<button type="submit" aria-label="검색">' + TEXT.searchIcon + '</button>' +
                 '</form>') +
             '</div>' +
+            /* ★ 모바일 전용 햄버거 (2026-08-24). 768px 이하에서만 보인다 — 2단 네비를 숨기고
+               이 버튼이 세로 메뉴(.dogu-gnb-main)를 펼친다. 데스크톱은 CSS 가 숨겨서 무영향 */
+            '<button class="dogu-menu-btn" type="button" id="dogu-menu-btn" aria-label="메뉴" aria-expanded="false" aria-controls="dogu-nav">' +
+                '<span class="dogu-menu-bar"></span><span class="dogu-menu-bar"></span><span class="dogu-menu-bar"></span>' +
+            '</button>' +
         '</div></div>' +
         '<div class="dogu-gnb-main"><div class="dogu-wrap dogu-gnb-main-inner">' +
             '<a class="dogu-nav-home" href="' + esc(opts.home || '/') + '"' + linkAttr(opts) + ' title="홈">⌂</a>' +
@@ -158,7 +171,8 @@
     }
 
     /* ---------- 히어로 검색 + 드롭다운 ---------- */
-    var dropdownState = { tab: 'favorites', opts: null, root: null };
+    /* query 가 비어 있으면 즐겨찾기/최근 탭, 차 있으면 자동완성 결과를 보여준다 */
+    var dropdownState = { tab: 'favorites', opts: null, root: null, query: '', items: null, loading: false, seq: 0 };
 
     function heroHtml(opts) {
         var s = opts.search || {};
@@ -194,6 +208,34 @@
         var s = dropdownState.opts && dropdownState.opts.search;
         if (!root || !s) return;
         var listEl = root.querySelector('#dogu-dropdown-list');
+        var header = root.querySelector('.dogu-dropdown-header');
+        var suggesting = !!dropdownState.query;
+
+        /* 자동완성 중에는 탭(즐겨찾기/최근)이 의미가 없어 숨긴다 */
+        if (header) header.style.display = suggesting ? 'none' : '';
+
+        if (suggesting) {
+            if (dropdownState.loading && !dropdownState.items) {
+                listEl.innerHTML = '<div class="dogu-dropdown-empty">' + TEXT.searching + '</div>';
+                return;
+            }
+            var found = dropdownState.items || [];
+            if (!found.length) {
+                listEl.innerHTML = '<div class="dogu-dropdown-empty">' + TEXT.noMatch + '</div>';
+                return;
+            }
+            listEl.innerHTML = found.map(function (it) {
+                var fk = it.key != null ? it.key : it.label;
+                return '<div class="dogu-dropdown-row">' +
+                    '<a class="dogu-dropdown-link" href="' + esc(it.href || '#') + '"' + linkAttr(dropdownState.opts) +
+                        ' data-dogu-key="' + esc(fk) + '">' + esc(it.label) +
+                        (it.sub ? '<em class="dogu-dropdown-sub">' + esc(it.sub) + '</em>' : '') +
+                    '</a>' +
+                '</div>';
+            }).join('');
+            return;
+        }
+
         var source = dropdownState.tab === 'favorites' ? s.favorites : s.recents;
         var items = (source && typeof source.all === 'function') ? source.all() : [];
         if (!items.length) {
@@ -232,7 +274,9 @@
         /* 포커스 드롭다운: 포커스 들어오면 열고, 나가면 닫는다.
            드롭다운 안을 mousedown 하면 input 이 blur 되면서 닫히므로 preventDefault 로 막는다 */
         input.addEventListener('focus', function () {
-            if (!s.favorites && !s.recents) return;
+            var fq = (input.value || '').trim();
+            if (!fq) { dropdownState.query = ''; dropdownState.items = null; }
+            if (!s.favorites && !s.recents && !dropdownState.query) return;
             renderDropdownList();
             dropdown.classList.add('open');
         });
@@ -262,6 +306,58 @@
                 dropdown.classList.remove('open');
                 input.blur();
             }
+        });
+
+        /* 자동완성. 사이트가 search.suggest(q) 를 주면 켜진다 (없으면 예전 그대로 동작).
+           호출이 잦으면 안 되니 200ms 디바운스를 걸고, 늦게 온 응답이 최신 결과를
+           덮어쓰지 않게 seq 로 순서를 지킨다. */
+        var sugTimer = null;
+        input.addEventListener('input', function () {
+            var q = (input.value || '').trim();
+            if (typeof s.suggest !== 'function' || !q) {
+                dropdownState.query = '';
+                dropdownState.items = null;
+                if (s.favorites || s.recents) { renderDropdownList(); dropdown.classList.add('open'); }
+                return;
+            }
+
+            /* 아직은 기존 탭을 그대로 두고 열어만 둔다. 자동완성으로 넘어가는 건
+               디바운스가 끝난 뒤다 — 그래야 짧은 입력에서 "찾는 중…"이 깜빡이지 않는다 */
+            dropdown.classList.add('open');
+
+            if (sugTimer) clearTimeout(sugTimer);
+            var mine = ++dropdownState.seq;
+            sugTimer = setTimeout(function () {
+                var out = s.suggest(q);
+
+                /* ★ null/undefined = "이 입력은 자동완성 대상이 아니다" (너무 짧다 등).
+                   빈 배열([])과 구분한다 — 빈 배열은 "찾아봤는데 없음"이라 그렇게 표시해야 하고,
+                   null 은 아무 일도 없었던 것처럼 즐겨찾기/최근을 그대로 둬야 한다. */
+                if (out == null) {
+                    dropdownState.query = '';
+                    dropdownState.items = null;
+                    dropdownState.loading = false;
+                    renderDropdownList();
+                    return;
+                }
+
+                dropdownState.query = q;
+                dropdownState.loading = true;
+                dropdownState.items = null;
+                renderDropdownList();
+
+                Promise.resolve(out).then(function (list) {
+                    if (mine !== dropdownState.seq) return;   // 더 최신 입력이 있었다
+                    dropdownState.loading = false;
+                    dropdownState.items = list || [];
+                    renderDropdownList();
+                }, function () {
+                    if (mine !== dropdownState.seq) return;
+                    dropdownState.loading = false;
+                    dropdownState.items = [];
+                    renderDropdownList();
+                });
+            }, 200);
         });
 
         input.addEventListener('keydown', function (e) {
@@ -397,6 +493,21 @@
             if (host) host.appendChild(header);
             else document.body.insertBefore(header, document.body.firstChild);
             bindSwitcher(header);
+            /* 모바일 햄버거: 버튼이 dogu-menu-open 을 토글하고, 바깥/메뉴 항목 클릭이 닫는다
+               (네비 클릭은 각 사이트 라우터가 preventDefault 만 하고 전파는 살려 두므로
+                document 리스너까지 올라와 저절로 닫힌다) */
+            var menuBtn = header.querySelector('#dogu-menu-btn');
+            if (menuBtn) {
+                menuBtn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    var open = header.classList.toggle('dogu-menu-open');
+                    menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+                });
+                document.addEventListener('click', function () {
+                    header.classList.remove('dogu-menu-open');
+                    menuBtn.setAttribute('aria-expanded', 'false');
+                });
+            }
             var form = header.querySelector('#dogu-gnb-search');
             if (form) {
                 form.addEventListener('submit', function (e) {
