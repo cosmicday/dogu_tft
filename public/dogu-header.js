@@ -434,6 +434,11 @@
                 '<a href="' + esc(links.privacy || '#') + '"' + linkAttr(opts) + '>개인정보 처리방침</a>' +
                 /* 버그제보 = 이메일 주소 클립보드 복사 (mailto 아님). 주소는 opts.contact */
                 '<a href="#" id="dogu-feedback" role="button">버그제보 및 피드백</a>' +
+                /* 사이트가 더 붙이는 링크 (2026-08-26, pixlol 「PC 버전」). opts.extraLinks = [{ id, text, href, onClick }].
+                   공통 셋 뒤에만 붙고 문구는 사이트 몫이다 — 없으면 아무것도 안 그린다 */
+                [].concat(opts.extraLinks || []).map(function (l) {
+                    return '<a href="' + esc(l.href || '#') + '"' + (l.id ? ' id="' + esc(l.id) + '"' : '') + ' role="button">' + esc(l.text || '') + '</a>';
+                }).join('') +
             '</div>' +
             notices.map(function (n) { return '<div class="dogu-footer-note">' + n + '</div>'; }).join('') +
             (opts.contact ? '<div class="dogu-footer-note">Contact: ' + esc(opts.contact) + '</div>' : '') +
@@ -562,6 +567,12 @@
                     copyEmail(opts.contact || '', opts);
                 });
             }
+            /* extraLinks 의 onClick 을 id 로 찾아 건다 (href 만 있는 링크는 그냥 링크다) */
+            [].concat(opts.extraLinks || []).forEach(function (l) {
+                if (!l.id || typeof l.onClick !== 'function') return;
+                var a = footer.querySelector('#' + l.id);
+                if (a) a.addEventListener('click', function (e) { e.preventDefault(); l.onClick(e); });
+            });
             return footer;
         },
 
