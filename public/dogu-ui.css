@@ -308,6 +308,7 @@ a.dogu-game-item:hover .dogu-game-icon { opacity: 1; }
 .dogu-gnb-main { background: var(--dogu-gnb-nav); }
 .dogu-gnb-main-inner { display: flex; align-items: center; gap: 4px; height: 46px; }
 .dogu-nav-home {
+    position: relative;                /* 홈 활성 밑줄(::after) 의 기준 (2026-08-27) */
     display: grid;
     place-items: center;
     flex: none;                        /* 메뉴가 길면 flex 가 이 칸을 먼저 줄였다 (maple 640px 에서 30→24px) */
@@ -322,6 +323,20 @@ a.dogu-game-item:hover .dogu-game-icon { opacity: 1; }
     text-decoration: none;
 }
 .dogu-nav-home:hover { color: #fff; }
+/* 홈에서는 탭이 아니라 ⌂ 가 활성 표시를 맡는다 (2026-08-27).
+   홈은 어떤 탭의 페이지도 아니라 밑줄이 아무 데도 없었다. body.dogu-home 은 사이트 라우터가
+   setHome() 으로 켜 두는 그 클래스라 사이트 JS 는 손댈 게 없다. 폰(<=768px)은 ⌂ 를 숨겨 무영향 */
+body.dogu-home .dogu-nav-home { color: var(--dogu-gnb-text-strong); }
+body.dogu-home .dogu-nav-home::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 2px;
+    background: var(--dogu-accent);
+    box-shadow: 0 0 8px var(--dogu-accent-glow-strong);
+}
 .dogu-nav {
     display: flex;
     gap: 2px;
