@@ -138,17 +138,9 @@
     }
 
     function headerHtml(opts) {
-        var placeholder = (opts.search && opts.search.placeholder) || '검색어를 입력해주세요.';
         return '<div class="dogu-gnb-utility"><div class="dogu-wrap dogu-gnb-utility-inner">' +
             brandHtml(opts, 'dogu-brand') +
             switcherHtml(opts.site, iconBaseOf(opts), opts) +
-            '<div class="dogu-gnb-right">' +
-                (opts.search === false ? '' :
-                '<form class="dogu-gnb-search" id="dogu-gnb-search" autocomplete="off">' +
-                    '<input type="text" id="dogu-gnb-search-input" placeholder="' + esc(placeholder) + '" autocomplete="off">' +
-                    '<button type="submit" aria-label="검색">' + TEXT.searchIcon + '</button>' +
-                '</form>') +
-            '</div>' +
             /* ★ 모바일 전용 햄버거 (2026-08-24). 768px 이하에서만 보인다 — 2단 네비를 숨기고
                이 버튼이 세로 메뉴(.dogu-gnb-main)를 펼친다. 데스크톱은 CSS 가 숨겨서 무영향 */
             '<button class="dogu-menu-btn" type="button" id="dogu-menu-btn" aria-label="메뉴" aria-expanded="false" aria-controls="dogu-nav">' +
@@ -166,7 +158,7 @@
     function submitFrom(input, opts) {
         var q = (input.value || '').trim();
         if (!q) {
-            var box = input.closest('.dogu-search-box') || input.closest('.dogu-gnb-search');
+            var box = input.closest('.dogu-search-box');
             if (box) {
                 box.classList.remove('shake');
                 void box.offsetWidth;
@@ -375,7 +367,7 @@
         });
     }
 
-    /* `/` 단축키 — 입력 중이 아닐 때 누르면 검색창으로 포커스 (히어로 → 없으면 1단) */
+    /* `/` 단축키 — 입력 중이 아닐 때 누르면 히어로 검색창으로 포커스 */
     var slashBound = false;
     function bindSlash() {
         if (slashBound) return;
@@ -385,7 +377,6 @@
             var t = e.target;
             if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
             var target = document.querySelector('#dogu-search-input');
-            if (!target || target.offsetParent === null) target = document.querySelector('#dogu-gnb-search-input');
             if (!target || target.offsetParent === null) return;
             e.preventDefault();
             target.focus();
@@ -527,14 +518,6 @@
                 });
                 document.addEventListener('click', closeMenu);
             }
-            var form = header.querySelector('#dogu-gnb-search');
-            if (form) {
-                form.addEventListener('submit', function (e) {
-                    e.preventDefault();
-                    submitFrom(form.querySelector('input'), opts);
-                });
-            }
-            bindSlash();
             return header;
         },
 

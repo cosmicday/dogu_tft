@@ -129,17 +129,13 @@ DoguUI.mountHeader({
         { key: 'ranking', label: '순위표', href: '/er/ranking', active: true },
         …
     ],
-    aside: '패치 <b>1.2.0</b>',        // 2단 우측 보조 정보 HTML. 없으면 빈칸
-    search: {                         // false 를 주면 1단 검색창을 뺀다
-        placeholder: '플레이어 닉네임을 입력해주세요.',
-        onSubmit: function (query, inputEl) { … }
-    }
+    aside: '패치 <b>1.2.0</b>'         // 2단 우측 보조 정보 HTML. 없으면 빈칸
 });
 ```
 
-- **2단 고정.** 1단 = 로고 / 게임 스위처 / (우) 검색창, 2단 = ⌂ + 네비 / (우) 보조 정보
+- **2단 고정.** 1단 = 로고 / 게임 스위처 / (우) 모바일 햄버거, 2단 = ⌂ + 네비 / (우) 보조 정보
 - 1단: 높이 62px(768px 이하 52px), 배경 `rgba(8,15,32,.66)`. 2단: 46px, `rgba(15,27,52,.55)`. 헤더 전체 `sticky; blur(14px) saturate(1.3)`
-- **1단 검색창은 상시 노출, 768px 이하에서만 숨김.** 스크롤 연동 없음. 드롭다운 없음
+- **헤더에는 검색창이 없다** (2026-08-27 제거). 검색은 홈 히어로의 알약 검색창 하나뿐이다
 - 로고: 이탤릭 텍스트 두 조각, 아이콘 없음. 21px/900
 - 후속 갱신: `DoguUI.setActiveNav(key)`, `DoguUI.setAside(html)`
 
@@ -172,7 +168,7 @@ DoguUI.mountHeader({
 
 `DoguUI.mountHero(container, opts)` — 로고(52px, 768px 이하 36px) + 알약 검색창 + 포커스 드롭다운. 히어로 로고도 헤더 로고처럼 `opts.home` 으로 가는 링크다 (pointer, 드래그 선택 불가, 밑줄·색 변화 없음).
 
-**모바일 입력창 글자 16px** (2026-08-25): iOS 사파리는 포커스한 input 글자가 16px 미만이면 화면을 확대한다. 그래서 768px 이하에서 `.dogu-search-input`·`.dogu-gnb-search input` 은 16px 이다 (데스크톱 14/12.5px). 사이트 자체 input 을 모바일에서 쓰는 곳(loa 입찰·maple 길드 등)은 각 사이트 CSS 에서 같은 규칙을 적용해야 한다. `maximum-scale=1` 로 막지 말 것 — 핀치 줌까지 죽는다.
+**모바일 입력창 글자 16px** (2026-08-25): iOS 사파리는 포커스한 input 글자가 16px 미만이면 화면을 확대한다. 그래서 768px 이하에서 `.dogu-search-input` 은 16px 이다 (데스크톱 14px). 사이트 자체 input 을 모바일에서 쓰는 곳(loa 입찰·maple 길드 등)은 각 사이트 CSS 에서 같은 규칙을 적용해야 한다. `maximum-scale=1` 로 막지 말 것 — 핀치 줌까지 죽는다.
 
 **`opts.mascot`** (2026-08-25): 로고 왼쪽에 붙는 사이트 마스코트 이미지 경로 — 각 사이트의 파비콘(모자만 다른 도구 캐릭터)을 준다. er `favicon-192.png` · maple `icon-192.png` · loa `apple-touch-icon.png` · tft `favicon.png` · pixlol `/favicon_lol_180.png`. 크기는 글자에 비례(`height: 1.25em`)하므로 따로 맞출 게 없다. 헤더 로고에는 붙이지 않는다 — 헤더는 로고 오른쪽에 게임 스위처 아이콘이 이미 있어서 아이콘 둘이 글자를 끼는 모양이 된다.
 
@@ -199,13 +195,13 @@ DoguUI.mountHero('#hero', {
 
 - 히어로 패딩 `74px 16px 62px`(768px 이하 `32px 16px 28px`). 높이 지정 없음, 판·경계선 없음
 - 검색창: 높이 52px(모바일 42px), `border-radius: 999px`, `overflow: hidden`, 유리 `rgba(10,19,38,.58)` + `blur(12px)`. 버튼 58px, radius 없음, `linear-gradient(135deg, 액센트, 액센트-dark)`, `aria-label="검색"` 고정
-- **버튼 안 내용은 사이트 설정값(`search.button`)이다.** 기본은 `.GG` 글자(15px·900·이탤릭, 로고와 같은 결). dogu.gg 계열(er·maple·loa·tft)은 기본값 그대로, **pixlol 만 돋보기**(`DoguUI.TEXT.searchIcon`). 헤더 1단의 작은 검색창은 항상 돋보기
+- **버튼 안 내용은 사이트 설정값(`search.button`)이다.** 기본은 `.GG` 글자(15px·900·이탤릭, 로고와 같은 결). dogu.gg 계열(er·maple·loa·tft)은 기본값 그대로, **pixlol 만 돋보기**(`DoguUI.TEXT.searchIcon`)
 - **검색창 안에 셀렉트 없음.** 월드/서버 선택 UI 는 공통 규격 밖 (maple 길드 검색처럼 구조상 필요한 곳은 사이트가 자기 페이지에 따로 둔다)
 - **즐겨찾기/최근 검색은 포커스 드롭다운.** 포커스가 들어오면 열리고 나가면 닫힌다. `favorites`·`recents` 둘 다 안 주면 드롭다운이 안 뜬다
   - 라벨 `★ 즐겨찾기` / `🕘 최근 검색`, 안내문 `각각 10개까지 저장됩니다.`, 빈 상태 `저장된 항목이 없습니다.` — `DoguUI.TEXT` 에 있고 사이트에서 바꾸지 않는다
   - 목록이 바뀐 뒤 열려 있는 드롭다운을 갱신하려면 `DoguUI.refreshDropdown()`
 - 빈 검색어로 제출하면 검색창을 흔들고 포커스만 준다. 오류 문구는 `DoguUI.showSearchError(msg)` (빈 문자열로 지움)
-- **`/` 단축키** — 입력 중이 아닐 때 누르면 히어로 검색창(없으면 1단 검색창)으로 포커스. 전 사이트 공통
+- **`/` 단축키** — 입력 중이 아닐 때 누르면 히어로 검색창으로 포커스. 전 사이트 공통 (히어로가 없는 페이지에서는 아무 일도 안 한다)
 
 ---
 
@@ -251,7 +247,6 @@ el.innerHTML = DoguUI.comingSoonHtml({ home: '/er/', linkAttr: 'data-link' });
 
 - `dogu-ui.css` 의 "공통 토큰" 블록과 모든 `.dogu-*` 규칙. 사이트 CSS 로 `.dogu-*` 를 덮어쓰지 말 것 — 한 사이트만 다르게 보이면 통일이 무너진다
 - `dogu-header.js` 의 `GAMES` · `TEXT`
-- 헤더 1단 검색창의 노출 규칙(상시 노출 · 768px 이하 숨김)
 - 드롭다운의 포커스 열림/닫힘 방식
 - 로고 형태(이탤릭 텍스트 2조각, 아이콘 없음, 둘 다 홈 링크)
 
@@ -299,7 +294,7 @@ git -C dogu_template status --short dogu-ui    # 원본 작업본이 미커밋 �
 
 - **공통 뿌리(`.dogu-gnb` `.dogu-hero` `.dogu-footer` `.dogu-doc` `.dogu-toast`)에 `font-family`·`font-size: 13px`·`line-height`·`color` 를 직접 박는다.** 사이트 `body` 의 font-size 가 13/14/16px 제각각이라(er/maple/loa·tft·pixlol 실측) 상속받으면 `em`·`kbd`·안내문 높이가 사이트마다 달라진다
 - **공통 파일이 만드는 `button`·`input`·`a`·`img` 는 전부 클래스(또는 `.dogu-x button` 후손) 규칙 안에 `font-family: inherit`·`margin`·`padding`·`border`·`appearance`·`text-decoration` 을 명시한다.** 사이트에 `button { font-family: inherit }` 리셋이 있는 곳(er·maple·loa)과 없는 곳(tft·pixlol)이 있어서, 빠뜨리면 없는 쪽만 **Arial** 로 나간다 (검색 버튼 `.GG`·돋보기가 실제로 그랬다). 클래스 규칙(0,1,0)은 태그 규칙(0,0,1)을 로드 순서와 무관하게 이긴다
-- **flex 줄에 놓이는 고정폭 요소(`.dogu-brand` `.dogu-switcher` `.dogu-nav-home` `.dogu-gnb-search`)는 `flex: none`.** 네비가 긴 사이트(maple)에서 ⌂ 칸이 30→24px 로 줄어들었었다
+- **flex 줄에 놓이는 고정폭 요소(`.dogu-brand` `.dogu-switcher` `.dogu-nav-home`)는 `flex: none`.** 네비가 긴 사이트(maple)에서 ⌂ 칸이 30→24px 로 줄어들었었다
 - 사이트의 `img { max-width; border-radius }` 류에 대비해 `.dogu-game-icon` 도 `max-width: none; border-radius: 0` 을 갖는다
 - 새 요소를 공통 파일에 추가할 때도 위 규칙대로: "사이트에 리셋이 없어도, body 폰트가 달라도 같은 모양인가"를 자문할 것
 
@@ -310,7 +305,7 @@ git -C dogu_template status --short dogu-ui    # 원본 작업본이 미커밋 �
    - `.dogu-nav-item` 기본 `#a9bcd9`, `.active` `#fff`, hover `#fff`
    - `.dogu-brand` / `.dogu-hero-mark` `#fff`, `em` 은 `--dogu-accent`
    - `.dogu-doc-link` / `.dogu-dropdown-link` hover → `--dogu-accent-strong`
-   - `.dogu-search-btn` · `.dogu-gnb-search button` · `.dogu-search-input` 의 `font-family` 가 `Pretendard, "Malgun Gothic", …` 인지 (**Arial 이면 버튼 리셋 누락**)
+   - `.dogu-search-btn` · `.dogu-search-input` 의 `font-family` 가 `Pretendard, "Malgun Gothic", …` 인지 (**Arial 이면 버튼 리셋 누락**)
    - `.dogu-switcher-btn` 34px, 버튼 아이콘 22px, 목록 아이콘 32px, `.dogu-nav-home` 30×46
    - `.dogu-footer-links a` `#a9bcd9`, `.dogu-footer-note` `#7288ac`
    - `body` 의 `background-color` 가 `--dogu-bg` 이고 `html` 은 투명

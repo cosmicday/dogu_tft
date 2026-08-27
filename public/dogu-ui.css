@@ -177,14 +177,14 @@ html { scrollbar-color: var(--dogu-accent-dark) var(--dogu-bg); }   /* Firefox (
     font-family: var(--dogu-font);
 }
 
-/* 1단: 로고 / 게임 스위처 / (우) 검색창 */
+/* 1단: 로고 / 게임 스위처 / (우) 모바일 햄버거 */
 .dogu-gnb-utility { background: var(--dogu-gnb-top); }
 .dogu-gnb-utility-inner { display: flex; align-items: center; gap: 12px; height: 62px; }
-.dogu-gnb-right { margin-left: auto; display: flex; align-items: center; gap: 8px; flex: none; }
 
 /* 모바일 햄버거 버튼. 데스크톱에서는 숨기고 8절 반응형에서 켠다 (2026-08-24) */
 .dogu-menu-btn {
     display: none;
+    margin-left: auto;                 /* 1단 오른쪽 끝으로. 검색창을 뺀 뒤로 이 버튼이 직접 민다 (2026-08-27) */
     flex: none;
     flex-direction: column;
     justify-content: center;
@@ -303,62 +303,6 @@ a.dogu-game-item:hover { color: #fff; background: rgba(255, 255, 255, 0.06); }
 a.dogu-game-item:hover .dogu-game-icon { opacity: 1; }
 .dogu-game-item.active { color: var(--dogu-accent-strong); font-weight: 800; background: var(--dogu-accent-weak); }
 .dogu-game-item.active .dogu-game-icon { opacity: 1; }
-
-/* 1단 작은 검색창 — 상시 노출, 768px 이하에서만 숨김. 드롭다운 없음 */
-.dogu-gnb-search {
-    display: flex;
-    align-items: center;
-    flex: none;
-    width: 250px;
-    height: 34px;
-    margin: 0;
-    padding: 0 10px;
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    border-radius: 4px;
-    background: rgba(255, 255, 255, 0.06);
-}
-.dogu-gnb-search:focus-within { border-color: var(--dogu-accent); }
-.dogu-gnb-search input {
-    flex: 1;
-    min-width: 0;                      /* flex 안 input 지뢰 */
-    width: auto;
-    height: 100%;
-    margin: 0;
-    padding: 0;
-    border: 0;
-    border-radius: 0;
-    outline: 0;
-    box-shadow: none;
-    appearance: none;
-    -webkit-appearance: none;
-    background: transparent;
-    color: #fff;
-    font-family: inherit;
-    font-size: 12.5px;
-    font-weight: 400;
-    line-height: normal;
-    text-overflow: ellipsis;           /* 긴 placeholder 가 돋보기 밑으로 안 들어가게 */
-}
-.dogu-gnb-search input::placeholder { color: rgba(255, 255, 255, 0.42); }
-.dogu-gnb-search button {
-    flex: none;
-    width: auto;
-    height: auto;
-    margin: 0;
-    padding: 0 2px;
-    border: 0;
-    border-radius: 0;
-    appearance: none;
-    -webkit-appearance: none;
-    background: transparent;
-    color: rgba(255, 255, 255, 0.6);
-    cursor: pointer;
-    font-family: inherit;              /* ★ 사이트에 button 리셋이 없으면 Arial 로 나간다 (tft·pixlol 에서 실제로) */
-    font-size: 13px;
-    font-weight: 400;
-    line-height: 1;
-}
-.dogu-gnb-search button:hover { color: #fff; }
 
 /* 2단: 네비게이션 / (우) 보조 정보 */
 .dogu-gnb-main { background: var(--dogu-gnb-nav); }
@@ -680,16 +624,12 @@ body.dogu-body:not(.dogu-home) .dogu-hero { display: none; }
 .dogu-doc-link:hover { text-decoration: underline; }
 
 /* ---------- 8. 반응형 ---------- */
-@media (max-width: 1024px) {
-    .dogu-gnb-search { width: 180px; }
-}
 @media (max-width: 768px) {
     .dogu-gnb-utility-inner { height: 52px; gap: 8px; }
     /* 좁은 화면: 스위처 **버튼**만 아이콘으로 줄인다. 펼친 목록은 아이콘+게임명 그대로
        (2026-08-24 — 예전엔 목록 이름까지 숨겼는데 아이콘만으로는 어떤 게임인지 안 갈렸다) */
     .dogu-switcher-btn .dogu-game-name { display: none; }
     .dogu-switcher-btn { padding: 0 10px 0 6px; }
-    .dogu-gnb-search { display: none; }
     .dogu-brand { font-size: 18px; }
     .dogu-gnb-aside { display: none; }
 
@@ -736,7 +676,7 @@ body.dogu-body:not(.dogu-home) .dogu-hero { display: none; }
     .dogu-search-box { height: 42px; }
     /* iOS 사파리는 input 글자가 16px 미만이면 포커스 때 화면을 확대한다 (2026-08-25). 뷰포트 maximum-scale 로 막는 건
        핀치 줌까지 죽이므로 안 쓰고, 입력창 글자만 16px 로 올린다. 데스크톱은 14px 그대로 */
-    .dogu-search-input, .dogu-gnb-search input { font-size: 16px; }
+    .dogu-search-input { font-size: 16px; }
     .dogu-dropdown-hint { display: none; }
     .dogu-search-shortcut { display: none; }   /* 모바일엔 키보드가 없다 */
     .dogu-toast { top: auto; bottom: 20px; }
