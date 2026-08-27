@@ -377,6 +377,59 @@ body.dogu-home .dogu-nav-home::after {
     background: var(--dogu-accent);
     box-shadow: 0 0 8px var(--dogu-accent-glow-strong);
 }
+
+/* ---------- 하위 메뉴 (2026-08-27) ----------
+   nav[].sub 를 넘긴 탭만 그룹이 된다. 여는 건 :hover / :focus-within 이라 JS 가 없다.
+   ★ .dogu-nav 가 overflow-x: auto 라 그 안의 absolute 는 잘린다 — has-sub 일 때만 푼다
+     (하위 메뉴를 안 쓰는 사이트는 예전처럼 네비가 가로로 스크롤된다) */
+.dogu-nav.has-sub { overflow: visible; }
+.dogu-nav-group {
+    position: relative;
+    display: flex;
+    flex: none;
+}
+.dogu-nav-parent { cursor: default; }
+a.dogu-nav-parent { cursor: pointer; }
+.dogu-nav-caret {
+    margin-left: 5px;
+    font-size: 9px;
+    line-height: 1;
+    opacity: 0.75;
+}
+.dogu-nav-sub {
+    display: none;
+    position: absolute;
+    top: 46px;
+    left: 0;
+    z-index: 20;
+    flex-direction: column;
+    min-width: 148px;
+    padding: 6px;
+    background: var(--dogu-card);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid var(--dogu-line-2);
+    border-radius: var(--dogu-radius);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+.dogu-nav-group:hover .dogu-nav-sub,
+.dogu-nav-group:focus-within .dogu-nav-sub { display: flex; }
+.dogu-nav-sub-item {
+    display: block;
+    margin: 0;
+    padding: 8px 10px;
+    border: 0;
+    border-radius: 4px;
+    background: none;
+    color: var(--dogu-text-2);
+    font-family: inherit;
+    font-size: 13px;
+    line-height: normal;
+    text-decoration: none;
+    white-space: nowrap;
+}
+a.dogu-nav-sub-item:hover { color: #fff; background: rgba(255, 255, 255, 0.06); }
+.dogu-nav-sub-item.active { color: var(--dogu-accent-strong); font-weight: 800; background: var(--dogu-accent-weak); }
 .dogu-gnb-aside {
     margin-left: auto;
     padding-left: 12px;
@@ -661,6 +714,10 @@ body.dogu-body:not(.dogu-home) .dogu-hero { display: none; }
         right: 0;
         border-bottom: 1px solid rgba(140, 190, 250, 0.14);
         box-shadow: 0 14px 26px rgba(0, 0, 0, 0.45);
+        /* ★ 펼친 패널 배경은 사이트가 덮어쓸 수 있다 (2026-08-27). 기본값은 2단 바와 같은 반투명이라
+           안 덮으면 지금까지와 똑같다. 반투명이면 뒤 페이지 글자가 메뉴 글자와 겹쳐 읽히므로
+           불투명 색을 쓰는 사이트는 --dogu-gnb-panel 을 준다 (pixlol: #16112a) */
+        background: var(--dogu-gnb-panel, var(--dogu-gnb-nav));
         /* 부모의 backdrop-filter 는 헤더 상자 밖(펼친 패널)까지 안 덮는다 — 패널이 자기 걸 갖는다 */
         backdrop-filter: blur(14px) saturate(1.3);
         -webkit-backdrop-filter: blur(14px) saturate(1.3);
@@ -681,6 +738,22 @@ body.dogu-body:not(.dogu-home) .dogu-hero { display: none; }
     .dogu-gnb.dogu-menu-open .dogu-nav-item { height: auto; padding: 12px 18px; font-size: 15px; }
     /* 밑줄(active::after)은 세로 목록에선 글자 밑 짧은 선으로 */
     .dogu-gnb.dogu-menu-open .dogu-nav-item.active::after { left: 18px; right: auto; width: 26px; }
+    /* 하위 메뉴는 접지 않는다 — 세로 메뉴 안에서 들여쓴 채로 항상 펼쳐 둔다 (2026-08-27) */
+    .dogu-gnb.dogu-menu-open .dogu-nav-group { display: block; }
+    .dogu-gnb.dogu-menu-open .dogu-nav-sub {
+        display: flex;
+        position: static;
+        min-width: 0;
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        box-shadow: none;
+    }
+    .dogu-gnb.dogu-menu-open .dogu-nav-sub-item { padding: 10px 18px 10px 36px; border-radius: 0; font-size: 14px; }
+    .dogu-nav-caret { display: none; }
     .dogu-nav-home { display: none; }   /* 홈은 로고가 맡는다 */
 
     /* 히어로 로고 24→36px (2026-08-25). 24px 은 헤더 로고(18px)의 1.3배라 같은 글자가 60px 간격으로 두 번 찍힌 것처럼 보였다.

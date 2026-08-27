@@ -130,11 +130,33 @@
     }
 
     /* ---------- 헤더 ---------- */
+    /* 하위 메뉴 (2026-08-27). nav[].sub = [{ key, label, href }] 를 주면 그 탭이 드롭다운이 된다.
+       - **부모에 href 를 안 주면 링크가 아니다** (<span>) — "부모를 눌러도 아무 데도 안 감" 을 사이트가 고를 수 있게.
+         href 를 주면 예전처럼 링크가 된다
+       - 여는 건 CSS 의 :hover / :focus-within 이라 여는 JS 가 없다. 폰(<=768px)은 접지 않고 들여써서 다 펼친다
+       - sub 를 안 넘기면 마크업이 예전과 한 글자도 다르지 않다 (다른 사이트 무영향) */
     function navHtml(items, opts) {
         return (items || []).map(function (it) {
-            return '<a class="dogu-nav-item' + (it.active ? ' active' : '') + '" href="' + esc(it.href) + '"' +
-                linkAttr(opts) + (it.key ? ' data-nav="' + esc(it.key) + '"' : '') + '>' + esc(it.label) + '</a>';
+            var sub = it.sub || [];
+            var cls = 'dogu-nav-item' + (sub.length ? ' dogu-nav-parent' : '') + (it.active ? ' active' : '');
+            var navAttr = it.key ? ' data-nav="' + esc(it.key) + '"' : '';
+            var label = esc(it.label) + (sub.length ? '<span class="dogu-nav-caret" aria-hidden="true">▾</span>' : '');
+            var head = (sub.length && !it.href)
+                ? '<span class="' + cls + '" tabindex="0" aria-haspopup="true"' + navAttr + '>' + label + '</span>'
+                : '<a class="' + cls + '" href="' + esc(it.href) + '"' + linkAttr(opts) + navAttr +
+                  (sub.length ? ' aria-haspopup="true"' : '') + '>' + label + '</a>';
+            if (!sub.length) return head;
+            return '<span class="dogu-nav-group">' + head + '<span class="dogu-nav-sub">' + sub.map(function (s) {
+                return '<a class="dogu-nav-sub-item' + (s.active ? ' active' : '') + '" href="' + esc(s.href) + '"' +
+                    linkAttr(opts) + (s.key ? ' data-nav="' + esc(s.key) + '"' : '') + '>' + esc(s.label) + '</a>';
+            }).join('') + '</span></span>';
         }).join('');
+    }
+
+    /* ★ .dogu-nav 는 overflow-x: auto 라 그대로 두면 드롭다운이 그 안에서 잘린다 —
+       하위 메뉴가 있는 사이트에서만 overflow 를 푼다 (CSS 의 .dogu-nav.has-sub) */
+    function hasSub(items) {
+        return (items || []).some(function (n) { return n.sub && n.sub.length; });
     }
 
     function headerHtml(opts) {
@@ -149,7 +171,7 @@
         '</div></div>' +
         '<div class="dogu-gnb-main"><div class="dogu-wrap dogu-gnb-main-inner">' +
             '<a class="dogu-nav-home" href="' + esc(opts.home || '/') + '"' + linkAttr(opts) + ' title="홈">⌂</a>' +
-            '<nav class="dogu-nav" id="dogu-nav">' + navHtml(opts.nav, opts) + '</nav>' +
+            '<nav class="dogu-nav' + (hasSub(opts.nav) ? ' has-sub' : '') + '" id="dogu-nav">' + navHtml(opts.nav, opts) + '</nav>' +
             '<span class="dogu-gnb-aside" id="dogu-gnb-aside">' + (opts.aside || '') + '</span>' +
         '</div></div>';
     }
@@ -502,6 +524,11 @@
                (네비 클릭은 각 사이트 라우터가 preventDefault 만 하고 전파는 살려 두므로
                 document 리스너까지 올라와 저절로 닫힌다).
                게임 스위처와는 상호 배타 — 하나를 열면 다른 하나는 접힌다 (2026-08-25) */
+            /* 링크가 아닌 부모 탭(하위 메뉴만 여는 자리)은 클릭을 삼킨다 — 안 그러면
+               폰에서 라벨을 누르는 것만으로 아래 document 리스너가 메뉴를 닫는다 (2026-08-27) */
+            header.querySelectorAll('span.dogu-nav-parent').forEach(function (t) {
+                t.addEventListener('click', function (e) { e.stopPropagation(); });
+            });
             var menuBtn = header.querySelector('#dogu-menu-btn');
             function closeMenu() {
                 header.classList.remove('dogu-menu-open');
@@ -569,6 +596,15 @@
         /* 2단 네비 활성 표시 갱신 (data-nav 키 기준) */
         setActiveNav: function (key) {
             document.querySelectorAll('#dogu-nav .dogu-nav-item').forEach(function (a) {
+                /* 하위 메뉴의 어느 항목이 켜지면 부모 탭도 같이 켠다 (2026-08-27) */
+                var par = a.parentNode;
+                var group = (par && par.classList && par.classList.contains('dogu-nav-group')) ? par : null;
+                var subOn = !!(key && group) && [].slice.call(group.querySelectorAll('.dogu-nav-sub-item')).some(function (s) {
+                    return s.dataset.nav === key;
+                });
+                a.classList.toggle('active', a.dataset.nav === key || subOn);
+            });
+            document.querySelectorAll('#dogu-nav .dogu-nav-sub-item').forEach(function (a) {
                 a.classList.toggle('active', a.dataset.nav === key);
             });
         },
