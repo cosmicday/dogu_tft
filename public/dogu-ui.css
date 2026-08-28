@@ -115,6 +115,10 @@ body.dogu-body.dogu-home::after {
 ::-webkit-scrollbar-thumb { background: var(--dogu-accent-dark); border-radius: 8px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--dogu-accent); }
 html { scrollbar-color: var(--dogu-accent-dark) var(--dogu-bg); }   /* Firefox (hover 색은 못 준다) */
+/* ★ 스크롤바 자리를 항상 비워 둔다 (2026-08-28). 내용이 창보다 짧은 페이지(준비 중 페이지 등)에서 세로 스크롤바가
+   사라지면 문서가 15px 넓어져서, 가운데 정렬된 헤더·제목이 긴 페이지와 7~8px 어긋나 보였다 (pixlol 실측).
+   폰은 오버레이 스크롤바라 원래 0px 이니 영향 없다. 짧은 페이지 오른쪽에 15px 빈 띠가 남는 게 대가다 */
+html { scrollbar-gutter: stable; }
 
 /* ---------- 3. 공용 ----------
    ★ 격리 원칙 (2026-08-22, 5개 사이트 실측 뒤 세움)
