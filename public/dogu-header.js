@@ -529,6 +529,19 @@
             header.querySelectorAll('span.dogu-nav-parent').forEach(function (t) {
                 t.addEventListener('click', function (e) { e.stopPropagation(); });
             });
+            /* 하위 항목을 눌러 페이지가 바뀐 뒤에도 드롭다운이 남아 있던 것 (2026-08-28). SPA 라 DOM 이 안 바뀌어
+               누른 <a> 의 포커스(:focus-within)와 마우스(:hover)가 그대로라서다. 포커스를 빼고, 마우스가 그룹을
+               벗어날 때까지 .dogu-sub-hold 로 hover 를 막는다 (CSS 의 :not(.dogu-sub-hold)). 부모 탭을 다시 누르면
+               바로 푼다. 폰 세로 메뉴(dogu-menu-open)는 hover 와 무관한 규칙이라 영향 없다 */
+            header.querySelectorAll('.dogu-nav-group').forEach(function (g) {
+                g.addEventListener('click', function (e) {
+                    var t = e.target;
+                    var sub = t && t.closest ? t.closest('.dogu-nav-sub-item') : null;
+                    if (sub) { sub.blur(); g.classList.add('dogu-sub-hold'); }
+                    else g.classList.remove('dogu-sub-hold');
+                });
+                g.addEventListener('mouseleave', function () { g.classList.remove('dogu-sub-hold'); });
+            });
             var menuBtn = header.querySelector('#dogu-menu-btn');
             function closeMenu() {
                 header.classList.remove('dogu-menu-open');

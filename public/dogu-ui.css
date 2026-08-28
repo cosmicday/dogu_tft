@@ -412,8 +412,10 @@ a.dogu-nav-parent { cursor: pointer; }
     border-radius: var(--dogu-radius);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
-.dogu-nav-group:hover .dogu-nav-sub,
-.dogu-nav-group:focus-within .dogu-nav-sub { display: flex; }
+/* ★ .dogu-sub-hold 는 하위 항목을 누른 직후 JS 가 붙인다 (2026-08-28) — SPA 라 페이지가 바뀌어도 누른 <a> 의
+   포커스(:focus-within)와 마우스(:hover)가 그대로라 드롭다운이 안 닫히던 것. 마우스가 그룹을 벗어나면 뗀다 */
+.dogu-nav-group:not(.dogu-sub-hold):hover .dogu-nav-sub,
+.dogu-nav-group:not(.dogu-sub-hold):focus-within .dogu-nav-sub { display: flex; }
 .dogu-nav-sub-item {
     display: block;
     margin: 0;
@@ -721,6 +723,14 @@ body.dogu-body:not(.dogu-home) .dogu-hero { display: none; }
         /* 부모의 backdrop-filter 는 헤더 상자 밖(펼친 패널)까지 안 덮는다 — 패널이 자기 걸 갖는다 */
         backdrop-filter: blur(14px) saturate(1.3);
         -webkit-backdrop-filter: blur(14px) saturate(1.3);
+        /* ★ 항목이 많으면 패널이 화면보다 길어진다 (2026-08-27, maple 이 하위 메뉴를 달아
+           20줄 929px 이 됐다). 헤더가 sticky 라 페이지를 스크롤해도 패널이 따라와서
+           넘친 항목에는 영원히 닿지 못한다 — 패널 자신이 스크롤을 가져야 한다.
+           100% 는 이 패널의 컨테이닝 블록(=헤더 1단)의 높이라 헤더가 커져도 알아서 맞는다 */
+        max-height: calc(100vh - 100%);
+        overflow-y: auto;
+        overscroll-behavior: contain;    /* 패널 끝에서 페이지가 따라 스크롤되지 않게 */
+        -webkit-overflow-scrolling: touch;
     }
     .dogu-gnb.dogu-menu-open .dogu-gnb-main-inner {
         flex-direction: column;
