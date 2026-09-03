@@ -208,7 +208,13 @@ html { scrollbar-gutter: stable; }
     background: none;
     cursor: pointer;
 }
-.dogu-menu-btn:hover { background: rgba(255, 255, 255, 0.12); }
+/* ★ 폰에서 보이는 요소의 :hover 는 전부 @media (hover: hover) 가드 (2026-09-03) —
+   터치 브라우저는 탭한 hover 스타일이 다음 탭까지 눌어붙는다 (pixlol 사이트 CSS 에서 세 번 밟은 증상).
+   데스크톱 무변화. 탭 피드백은 브라우저 기본 tap-highlight 가 맡는다.
+   데스크톱 전용 요소(스크롤바·⌂홈·단축키 힌트)의 hover 는 가드 없이 그대로 */
+@media (hover: hover) {
+    .dogu-menu-btn:hover { background: rgba(255, 255, 255, 0.12); }
+}
 .dogu-menu-bar {
     display: block;
     width: 20px;
@@ -241,7 +247,9 @@ html { scrollbar-gutter: stable; }
     cursor: pointer;
     white-space: nowrap;
 }
-.dogu-switcher-btn:hover { background: rgba(255, 255, 255, 0.12); }
+@media (hover: hover) {
+    .dogu-switcher-btn:hover { background: rgba(255, 255, 255, 0.12); }
+}
 /* 게임 아이콘 — 크기는 HTML width/height 속성이 정한다 (버튼 22 · 목록 32). 여백·crop 없음.
    사이트의 `img { max-width; border-radius; margin }` 류를 여기서 무력화한다 */
 .dogu-game-icon {
@@ -309,8 +317,10 @@ html { scrollbar-gutter: stable; }
 }
 /* 현재 게임만 아이콘이 밝고, 나머지는 낮춘다. hover 하면 밝아진다 */
 .dogu-game-item .dogu-game-icon { opacity: 0.55; transition: opacity 0.15s; }
-a.dogu-game-item:hover { color: #fff; background: rgba(255, 255, 255, 0.06); }
-a.dogu-game-item:hover .dogu-game-icon { opacity: 1; }
+@media (hover: hover) {
+    a.dogu-game-item:hover { color: #fff; background: rgba(255, 255, 255, 0.06); }
+    a.dogu-game-item:hover .dogu-game-icon { opacity: 1; }
+}
 .dogu-game-item.active { color: var(--dogu-accent-strong); font-weight: 800; background: var(--dogu-accent-weak); }
 .dogu-game-item.active .dogu-game-icon { opacity: 1; }
 
@@ -375,7 +385,9 @@ body.dogu-home .dogu-nav-home::after {
     line-height: normal;
     text-decoration: none;
 }
-.dogu-nav-item:hover { color: #fff; }
+@media (hover: hover) {
+    .dogu-nav-item:hover { color: #fff; }
+}
 .dogu-nav-item.active { color: var(--dogu-gnb-text-strong); }
 .dogu-nav-item.active::after {
     content: '';
@@ -415,7 +427,10 @@ a.dogu-nav-parent { cursor: pointer; }
     flex-direction: column;
     min-width: 148px;
     padding: 6px;
-    background: var(--dogu-card);
+    /* ★ 드롭다운 배경은 사이트가 덮어쓸 수 있다 (2026-09-03). 기본값은 지금까지와 같은 카드색이라
+       안 덮으면 그대로다. 카드색이 반투명인 사이트(loa)는 뒤 글자와 겹쳐 읽히므로
+       불투명 색을 --dogu-dropdown 으로 준다 (폰 패널의 --dogu-gnb-panel 과 같은 방식) */
+    background: var(--dogu-dropdown, var(--dogu-card));
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
     border: 1px solid var(--dogu-line-2);
@@ -440,12 +455,14 @@ a.dogu-nav-parent { cursor: pointer; }
     text-decoration: none;
     white-space: nowrap;
 }
-a.dogu-nav-sub-item:hover { color: #fff; background: rgba(255, 255, 255, 0.06); }
+@media (hover: hover) {
+    a.dogu-nav-sub-item:hover { color: #fff; background: rgba(255, 255, 255, 0.06); }
+}
 .dogu-nav-sub-item.active { color: var(--dogu-accent-strong); font-weight: 800; background: var(--dogu-accent-weak); }
 .dogu-gnb-aside {
     margin-left: auto;
     padding-left: 12px;
-    font-size: 11.5px;
+    font-size: 12px;                   /* 실글자 최소 12px (2026-09-03, pixlol 규칙을 공통 기준으로) */
     color: var(--dogu-gnb-text);
     white-space: nowrap;
 }
@@ -521,7 +538,6 @@ body.dogu-body:not(.dogu-home) .dogu-hero { display: none; }
     padding: 0 14px;
     border: 0;
     border-radius: 0;
-    outline: 0;
     box-shadow: none;
     appearance: none;
     -webkit-appearance: none;
@@ -533,6 +549,9 @@ body.dogu-body:not(.dogu-home) .dogu-hero { display: none; }
     line-height: normal;
 }
 .dogu-search-input::placeholder { color: rgba(255, 255, 255, 0.45); }
+/* 마우스 클릭 포커스에는 outline 을 안 그린다 — 알약 상자의 :focus-within 테두리가 그 역할.
+   키보드 포커스(:focus-visible)는 7-1절이 그린다 (예전엔 outline: 0 무조건이라 키보드에서 안 보였다) */
+.dogu-search-input:focus:not(:focus-visible) { outline: 0; }
 /* 버튼은 radius 없음 — 박스의 알약에 잘려 들어간다 */
 .dogu-search-btn {
     align-self: stretch;
@@ -555,7 +574,9 @@ body.dogu-body:not(.dogu-home) .dogu-hero { display: none; }
     cursor: pointer;
     transition: filter 0.15s;
 }
-.dogu-search-btn:hover { filter: brightness(1.15); }
+@media (hover: hover) {
+    .dogu-search-btn:hover { filter: brightness(1.15); }
+}
 /* 기본 버튼 내용 ".GG" — 로고와 같은 결(이탤릭·900). 돋보기를 쓸 땐 이 span 이 없다 */
 .dogu-search-btn-gg { font-family: inherit; font-size: 15px; font-weight: 900; font-style: italic; letter-spacing: -0.3px; }
 .dogu-search-error { display: none; margin: 8px 0 0; padding: 0; color: #ffb4b6; font-size: 12.5px; text-align: center; }
@@ -566,7 +587,7 @@ body.dogu-body:not(.dogu-home) .dogu-hero { display: none; }
     color: rgba(255, 255, 255, 0.88);
     font-size: 12px;
     font-weight: 400;
-    line-height: normal;
+    line-height: 1.5;                  /* 문단형이라 행간을 준다. 폰에서 두 줄로 접힐 때 붙어 보이던 것 */
     text-align: center;
     text-shadow: 0 1px 8px rgba(4, 10, 24, 0.75);
 }
@@ -577,7 +598,7 @@ body.dogu-body:not(.dogu-home) .dogu-hero { display: none; }
     border: 1px solid rgba(255, 255, 255, 0.35);
     border-radius: 4px;
     font-family: inherit;
-    font-size: 11px;
+    font-size: 12px;
     line-height: 16px;
 }
 
@@ -608,11 +629,13 @@ body.dogu-body:not(.dogu-home) .dogu-hero { display: none; }
 }
 .dogu-dropdown-tab { font-size: 12.5px; font-weight: 700; color: var(--dogu-text-3); cursor: pointer; }
 .dogu-dropdown-tab.active { color: var(--dogu-accent-strong); }
-.dogu-dropdown-hint { margin-left: auto; font-size: 11px; color: var(--dogu-text-3); }
+.dogu-dropdown-hint { margin-left: auto; font-size: 12px; color: var(--dogu-text-3); }
 .dogu-dropdown-row { display: flex; align-items: center; padding: 7px 14px; border-top: 1px solid var(--dogu-line); }
 .dogu-dropdown-row:first-child { border-top: 0; }
 .dogu-dropdown-link { flex: 1; display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--dogu-text-2); cursor: pointer; }
-.dogu-dropdown-link:hover { color: var(--dogu-accent-strong); }
+@media (hover: hover) {
+    .dogu-dropdown-link:hover { color: var(--dogu-accent-strong); }
+}
 .dogu-dropdown-del {
     margin: 0;
     padding: 2px 4px;
@@ -627,12 +650,14 @@ body.dogu-body:not(.dogu-home) .dogu-hero { display: none; }
     line-height: 1;
     cursor: pointer;
 }
-.dogu-dropdown-del:hover { color: #f0687e; }
+@media (hover: hover) {
+    .dogu-dropdown-del:hover { color: #f0687e; }
+}
 /* 자동완성 결과의 부제 (RP 등). 이름 오른쪽에 옅게 */
 .dogu-dropdown-sub {
     margin-left: 8px;
     font-style: normal;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 500;
     color: var(--dogu-text-3, #7c8aa5);
 }
@@ -656,9 +681,13 @@ body.dogu-body:not(.dogu-home) .dogu-hero { display: none; }
 .dogu-footer-inner { padding: 26px 16px 40px; }
 .dogu-footer .dogu-brand { font-size: 20px; text-shadow: none; }
 .dogu-footer-links { display: flex; gap: 16px; margin: 12px 0 14px; flex-wrap: wrap; }
-.dogu-footer-links a { margin: 0; padding: 0; font-size: 12px; font-weight: 700; color: #a9bcd9; text-decoration: none; cursor: pointer; }
-.dogu-footer-links a:hover { color: var(--dogu-accent-strong); }
-.dogu-footer-note { font-size: 11.5px; color: #7288ac; line-height: 1.7; word-break: keep-all; margin-top: 4px; }
+/* 상하 패딩 8px — 글자만으론 16px 라 폰에서 누르기 어려웠다. 터치 영역 32px 확보 */
+.dogu-footer-links a { margin: 0; padding: 8px 0; font-size: 12px; font-weight: 700; color: #a9bcd9; text-decoration: none; cursor: pointer; }
+@media (hover: hover) {
+    .dogu-footer-links a:hover { color: var(--dogu-accent-strong); }
+}
+/* 색은 변수로 — 하드코딩(#7288ac)이면 사이트가 --dogu-text-3 를 덮어도 여기만 안 따라온다 (er) */
+.dogu-footer-note { font-size: 12px; color: var(--dogu-text-3); line-height: 1.7; word-break: keep-all; margin-top: 4px; }
 
 /* 복사 안내 토스트 (값은 er .toast 그대로) */
 .dogu-toast {
@@ -701,7 +730,30 @@ body.dogu-body:not(.dogu-home) .dogu-hero { display: none; }
 .dogu-doc-title { margin: 0 0 10px; padding: 0; font-size: 20px; font-weight: 800; line-height: 1.3; letter-spacing: normal; color: var(--dogu-text); }
 .dogu-doc p { margin: 0 0 10px; padding: 0; font-size: 13px; color: var(--dogu-text-2); line-height: 1.85; }
 .dogu-doc-link { color: var(--dogu-accent-strong); font-weight: 700; text-decoration: none; }
-.dogu-doc-link:hover { text-decoration: underline; }
+@media (hover: hover) {
+    .dogu-doc-link:hover { text-decoration: underline; }
+}
+
+/* ---------- 7-1. 키보드 포커스 (2026-09-03) ----------
+   :focus-visible 은 키보드 포커스에만 붙는다 — 마우스 클릭에는 안 뜬다 (글자 입력 요소만
+   예외로, 클릭 포커스도 :focus-visible 로 친다). 색은 사이트 액센트를 타서 사이트마다 제 색 */
+.dogu-menu-btn:focus-visible,
+.dogu-switcher-btn:focus-visible,
+.dogu-game-item:focus-visible,
+.dogu-nav-home:focus-visible,
+.dogu-nav-sub-item:focus-visible,
+.dogu-dropdown-link:focus-visible,
+.dogu-dropdown-del:focus-visible {
+    outline: 2px solid var(--dogu-accent);
+    outline-offset: 2px;
+}
+/* 네비 항목은 46px 바를 꽉 채우고 .dogu-nav 가 overflow-x: auto 라 바깥 outline 이 잘린다,
+   검색 입력은 알약 상자가 overflow: hidden — 둘 다 안쪽으로 그린다 */
+.dogu-nav-item:focus-visible,
+.dogu-search-input:focus-visible {
+    outline: 2px solid var(--dogu-accent);
+    outline-offset: -2px;
+}
 
 /* ---------- 8. 반응형 ---------- */
 @media (max-width: 768px) {
@@ -755,7 +807,8 @@ body.dogu-body:not(.dogu-home) .dogu-hero { display: none; }
         white-space: normal;
         gap: 0;
     }
-    .dogu-gnb.dogu-menu-open .dogu-nav-item { height: auto; padding: 12px 18px; font-size: 15px; }
+    /* 패딩 13px → 실높이 ≈44px (터치 타겟 관례. 12px 땐 42px 로 살짝 미달) */
+    .dogu-gnb.dogu-menu-open .dogu-nav-item { height: auto; padding: 13px 18px; font-size: 15px; }
     /* 밑줄(active::after)은 세로 목록에선 글자 밑 짧은 선으로 */
     .dogu-gnb.dogu-menu-open .dogu-nav-item.active::after { left: 18px; right: auto; width: 26px; }
     /* ★ 하위 메뉴는 기본 접힘 — 부모를 누르면 펼친다 (2026-08-31, 예전엔 항상 펼쳐 둬서
@@ -797,4 +850,16 @@ body.dogu-body:not(.dogu-home) .dogu-hero { display: none; }
     .dogu-dropdown-hint { display: none; }
     .dogu-search-shortcut { display: none; }   /* 모바일엔 키보드가 없다 */
     .dogu-toast { top: auto; bottom: 20px; }
+}
+
+/* ---------- 9. 움직임 줄이기 (2026-09-03) ----------
+   OS 에서 "동작 줄이기/애니메이션 끄기"를 켠 사용자에게만 적용 — 그 외엔 무변화.
+   파일의 애니메이션·전환 전부: 검색창 흔들림, 아이콘·버튼·캐럿 전환, 토스트 페이드.
+   ★ 파일 맨 끝에 둘 것 — 같은 선택자의 위 규칙(폰 캐럿 등)을 순서로 이긴다 */
+@media (prefers-reduced-motion: reduce) {
+    .dogu-search-box.shake { animation: none; }
+    .dogu-game-item .dogu-game-icon,
+    .dogu-search-btn,
+    .dogu-toast,
+    .dogu-gnb.dogu-menu-open .dogu-nav-caret { transition: none; }
 }
