@@ -66,7 +66,13 @@ body.dogu-body {
     background: var(--dogu-bg);
     color: var(--dogu-text);
     min-height: 100vh;
+    /* sticky footer — header · main · footer 가 body 직계라, main 이 남는 높이를 먹어
+       짧은 페이지에서도 푸터가 화면 바닥에 붙는다. 5개 사이트 전부 같은 구조 (2026-08-28).
+       sticky 헤더·fixed 토스트는 flex 배치와 무관하다 */
+    display: flex;
+    flex-direction: column;
 }
+body.dogu-body > main { flex: 1 0 auto; }
 
 body.dogu-body::before {
     content: '';
@@ -752,9 +758,14 @@ body.dogu-body:not(.dogu-home) .dogu-hero { display: none; }
     .dogu-gnb.dogu-menu-open .dogu-nav-item { height: auto; padding: 12px 18px; font-size: 15px; }
     /* 밑줄(active::after)은 세로 목록에선 글자 밑 짧은 선으로 */
     .dogu-gnb.dogu-menu-open .dogu-nav-item.active::after { left: 18px; right: auto; width: 26px; }
-    /* 하위 메뉴는 접지 않는다 — 세로 메뉴 안에서 들여쓴 채로 항상 펼쳐 둔다 (2026-08-27) */
+    /* ★ 하위 메뉴는 기본 접힘 — 부모를 누르면 펼친다 (2026-08-31, 예전엔 항상 펼쳐 둬서
+       maple 처럼 하위가 많은 사이트는 패널이 20줄로 화면을 넘었다).
+       토글(dogu-sub-open)은 dogu-header.js 가 붙이고, 메뉴를 닫으면 다시 접힌다.
+       :not(.dogu-sub-open) 가드는 데스크톱 hover/:focus-within 규칙이 폰에서
+       절대위치 드롭다운으로 새어 나오는 것을 막는다 */
     .dogu-gnb.dogu-menu-open .dogu-nav-group { display: block; }
-    .dogu-gnb.dogu-menu-open .dogu-nav-sub {
+    .dogu-gnb.dogu-menu-open .dogu-nav-group:not(.dogu-sub-open) .dogu-nav-sub { display: none; }
+    .dogu-gnb.dogu-menu-open .dogu-nav-group.dogu-sub-open .dogu-nav-sub {
         display: flex;
         position: static;
         min-width: 0;
@@ -768,6 +779,10 @@ body.dogu-body:not(.dogu-home) .dogu-hero { display: none; }
     }
     .dogu-gnb.dogu-menu-open .dogu-nav-sub-item { padding: 10px 18px 10px 36px; border-radius: 0; font-size: 14px; }
     .dogu-nav-caret { display: none; }
+    /* 접힘 상태 표시 — 부모 탭 오른쪽 끝의 ▾, 펼치면 뒤집힌다 */
+    .dogu-gnb.dogu-menu-open .dogu-nav-parent { display: flex; align-items: center; justify-content: space-between; }
+    .dogu-gnb.dogu-menu-open .dogu-nav-caret { display: inline-block; transition: transform 0.15s; }
+    .dogu-gnb.dogu-menu-open .dogu-sub-open > .dogu-nav-parent .dogu-nav-caret { transform: rotate(180deg); }
     .dogu-nav-home { display: none; }   /* 홈은 로고가 맡는다 */
 
     /* 히어로 로고 24→36px (2026-08-25). 24px 은 헤더 로고(18px)의 1.3배라 같은 글자가 60px 간격으로 두 번 찍힌 것처럼 보였다.

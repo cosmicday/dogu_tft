@@ -529,6 +529,22 @@
             header.querySelectorAll('span.dogu-nav-parent').forEach(function (t) {
                 t.addEventListener('click', function (e) { e.stopPropagation(); });
             });
+            /* ★ 폰 세로 메뉴에서 묶음은 기본 접힘 — 부모를 누르면 펼친다 (2026-08-31).
+               하위 항목까지 20줄이라 패널이 화면을 넘었다 (maple). 데스크톱은 그대로 —
+               이 핸들러는 dogu-menu-open 일 때만 동작하고, 부모가 <a>(랭킹처럼 자기
+               페이지가 있는 탭)여도 폰에서는 이동 대신 펼치기만 한다.
+               토글 클래스(dogu-sub-open)는 CSS 의 menu-open 규칙에서만 쓴다 */
+            header.querySelectorAll('.dogu-nav-group > .dogu-nav-parent').forEach(function (t) {
+                t.addEventListener('click', function (e) {
+                    if (!header.classList.contains('dogu-menu-open')) return;
+                    e.preventDefault();
+                    e.stopPropagation();       /* document 리스너의 closeMenu 로 번지지 않게 */
+                    var g = t.parentNode;
+                    var open = !g.classList.contains('dogu-sub-open');
+                    g.classList.toggle('dogu-sub-open', open);
+                    t.setAttribute('aria-expanded', open ? 'true' : 'false');
+                });
+            });
             /* 하위 항목을 눌러 페이지가 바뀐 뒤에도 드롭다운이 남아 있던 것 (2026-08-28). SPA 라 DOM 이 안 바뀌어
                누른 <a> 의 포커스(:focus-within)와 마우스(:hover)가 그대로라서다. 포커스를 빼고, 마우스가 그룹을
                벗어날 때까지 .dogu-sub-hold 로 hover 를 막는다 (CSS 의 :not(.dogu-sub-hold)). 부모 탭을 다시 누르면
@@ -546,6 +562,12 @@
             function closeMenu() {
                 header.classList.remove('dogu-menu-open');
                 if (menuBtn) menuBtn.setAttribute('aria-expanded', 'false');
+                /* 다음에 열 때 묶음이 다시 접힌 상태로 시작하게 */
+                header.querySelectorAll('.dogu-nav-group.dogu-sub-open').forEach(function (g) {
+                    g.classList.remove('dogu-sub-open');
+                    var t = g.querySelector('.dogu-nav-parent');
+                    if (t) t.setAttribute('aria-expanded', 'false');
+                });
             }
             var closeSwitcher = bindSwitcher(header, closeMenu);
             if (menuBtn) {
@@ -615,10 +637,12 @@
                 var subOn = !!(key && group) && [].slice.call(group.querySelectorAll('.dogu-nav-sub-item')).some(function (s) {
                     return s.dataset.nav === key;
                 });
-                a.classList.toggle('active', a.dataset.nav === key || subOn);
+                /* key 가 없는 페이지(약관 등)에서는 아무 탭도 켜지 않는다. 묶음 부모 <span> 은
+                   data-nav 가 없어서 undefined === undefined 로 전부 켜지던 버그 (2026-08-28) */
+                a.classList.toggle('active', (key != null && a.dataset.nav === key) || subOn);
             });
             document.querySelectorAll('#dogu-nav .dogu-nav-sub-item').forEach(function (a) {
-                a.classList.toggle('active', a.dataset.nav === key);
+                a.classList.toggle('active', key != null && a.dataset.nav === key);
             });
         },
 
