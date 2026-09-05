@@ -380,7 +380,7 @@ body.dogu-home .dogu-nav-home::after {
     background: none;
     color: var(--dogu-gnb-text);
     font-family: inherit;
-    font-size: 13.5px;
+    font-size: 14px;                   /* 계단 4단 — 13.5 폐지 (2026-09-05 font-scale.md 1편). er 769~785px 겹침은 er 몫 */
     font-weight: 700;
     line-height: normal;
     text-decoration: none;
@@ -579,7 +579,7 @@ body.dogu-body:not(.dogu-home) .dogu-hero { display: none; }
 }
 /* 기본 버튼 내용 ".GG" — 로고와 같은 결(이탤릭·900). 돋보기를 쓸 땐 이 span 이 없다 */
 .dogu-search-btn-gg { font-family: inherit; font-size: 15px; font-weight: 900; font-style: italic; letter-spacing: -0.3px; }
-.dogu-search-error { display: none; margin: 8px 0 0; padding: 0; color: #ffb4b6; font-size: 12.5px; text-align: center; }
+.dogu-search-error { display: none; margin: 8px 0 0; padding: 0; color: #ffb4b6; font-size: 13px; text-align: center; }
 .dogu-search-error.show { display: block; }
 .dogu-search-note {
     margin: 10px 0 0;
@@ -627,7 +627,7 @@ body.dogu-body:not(.dogu-home) .dogu-hero { display: none; }
     border-bottom: 1px solid var(--dogu-line);
     background: var(--dogu-card-2);
 }
-.dogu-dropdown-tab { font-size: 12.5px; font-weight: 700; color: var(--dogu-text-3); cursor: pointer; }
+.dogu-dropdown-tab { font-size: 13px; font-weight: 700; color: var(--dogu-text-3); cursor: pointer; }
 .dogu-dropdown-tab.active { color: var(--dogu-accent-strong); }
 .dogu-dropdown-hint { margin-left: auto; font-size: 12px; color: var(--dogu-text-3); }
 .dogu-dropdown-row { display: flex; align-items: center; padding: 7px 14px; border-top: 1px solid var(--dogu-line); }
@@ -662,7 +662,7 @@ body.dogu-body:not(.dogu-home) .dogu-hero { display: none; }
     color: var(--dogu-text-3, #7c8aa5);
 }
 
-.dogu-dropdown-empty { padding: 20px; text-align: center; color: var(--dogu-text-3); font-size: 12.5px; }
+.dogu-dropdown-empty { padding: 20px; text-align: center; color: var(--dogu-text-3); font-size: 13px; }
 
 @keyframes doguShakeX {
     0%, 100% { transform: translateX(0); }
