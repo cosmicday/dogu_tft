@@ -31,8 +31,8 @@
     --accent: var(--dogu-accent);
     --accent-strong: var(--dogu-accent-dark);
     --danger: #f87171;
-    --radius: 12px;
-    --max-width: 1100px;
+    --radius: var(--dogu-r-card);          /* 카드 모서리 — 공통 토큰(10px)을 가리킨다 (14-4) */
+    --max-width: var(--dogu-wrap);         /* 본문 폭 = 헤더 폭 1120 (14-5) */
 
     /* TFT 코스트 색 (1~5코) */
     --cost-1: #6f7580;
@@ -50,9 +50,13 @@
 
 /* 배경·폰트·글자색은 body.dogu-body(dogu-ui.css)가 깐다. 여기선 보조 속성만 */
 body {
+    font-family: var(--dogu-font);   /* 14-1: Pretendard static (index.html 에서 로드) */
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
 }
+
+/* 폼 컨트롤은 UA 기본 글꼴(Arial)을 쓰므로 body 글꼴을 물려준다 (14-1 리셋) */
+button, input, select, textarea { font-family: inherit; }
 
 a {
     color: inherit;
@@ -62,7 +66,7 @@ a {
 code {
     background: var(--surface-2);
     border: 1px solid var(--border);
-    border-radius: 5px;
+    border-radius: var(--dogu-r-badge);
     padding: 1px 6px;
     font-size: 13px;
 }
@@ -84,33 +88,36 @@ code {
    3. 페이지 컨테이너
    ========================================= */
 main {
+    width: 100%;   /* body 가 flex column 이라 margin auto 만으론 내용 폭으로 줄어든다 → 헤더와 같은 1120 폭으로 편다 (14-5) */
     max-width: var(--max-width);
     margin: 0 auto;
-    padding: 0 20px;
+    padding: 0 16px;
 }
 
 .page-container {
     display: none;
-    padding: 44px 0 60px;
+    padding: var(--dogu-page-top) 0 var(--dogu-page-bottom);
     min-height: 60vh;
     animation: fadeIn 0.35s ease;
 }
 
 .page-title {
-    font-size: 26px;
+    font-size: 24px;
     font-weight: 800;
-    margin-bottom: 10px;
+    letter-spacing: var(--dogu-title-ls);
+    margin: 0 0 8px;
 }
 
 .page-desc {
     color: var(--text-dim);
-    font-size: 14px;
-    margin-bottom: 24px;
+    font-size: 13px;
+    margin-bottom: 20px;
 }
 
 .page-doc h3 {
     color: var(--accent);
-    font-size: 17px;
+    font-size: 15px;
+    font-weight: 800;
     margin: 26px 0 8px;
 }
 
@@ -122,7 +129,7 @@ main {
 
 .text-link {
     color: var(--accent);
-    font-weight: 600;
+    font-weight: 700;
 }
 
 .text-link:hover { text-decoration: underline; }
@@ -154,8 +161,8 @@ main {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 20px;
-    transition: transform 0.15s, border-color 0.15s;
+    padding: var(--dogu-card-pad);
+    transition: transform 0.2s ease, border-color var(--dogu-ease);
 }
 
 .card:hover {
@@ -163,7 +170,7 @@ main {
     border-color: var(--accent);
 }
 
-.card-title { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+.card-title { font-size: 15px; font-weight: 800; margin-bottom: 6px; }
 .card-desc { font-size: 13px; color: var(--text-dim); }
 
 .detail-head {
@@ -175,14 +182,16 @@ main {
 }
 
 .fav-btn {
+    height: var(--dogu-ctl-md);
     background: var(--surface-2);
     border: 1px solid var(--border);
-    border-radius: 999px;
+    border-radius: var(--dogu-r-ctl);
     color: var(--text-dim);
     cursor: pointer;
     font-size: 13px;
     font-weight: 700;
-    padding: 7px 16px;
+    line-height: 1;
+    padding: 0 14px;
 }
 
 .fav-btn.on { color: #facc15; border-color: rgba(250, 204, 21, 0.4); }
@@ -197,14 +206,14 @@ main {
     transform: translate(-50%, -18px);
     background: rgba(20, 20, 34, 0.96);
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: var(--dogu-r-card);
     color: var(--text);
     font-size: 14px;
     padding: 13px 22px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.25s, transform 0.25s;
+    transition: opacity 0.2s ease, transform 0.2s ease;
     z-index: 1000;
     max-width: min(92vw, 520px);
     text-align: center;
@@ -262,7 +271,7 @@ main {
     flex: none;
 }
 
-.suggest-name { font-size: 14px; font-weight: 600; }
+.suggest-name { font-size: 14px; font-weight: 700; }
 
 .suggest-tier {
     margin-left: auto;
@@ -293,14 +302,14 @@ main {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 20px 22px;
+    padding: var(--dogu-card-pad);
     margin-bottom: 14px;
 }
 
 .profile-icon {
     width: 72px;
     height: 72px;
-    border-radius: 14px;
+    border-radius: var(--dogu-r-card);
     border: 2px solid var(--accent);
     background: var(--surface-2);
     flex: none;
@@ -310,14 +319,21 @@ main {
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 22px;
+    font-size: 24px;
     font-weight: 800;
+    letter-spacing: var(--dogu-title-ls);
 }
 
+/* 이름 옆 별 — 아이콘 버튼 변형 (28×28, 14-3) */
 .profile-name .fav-btn {
-    font-size: 18px;
-    padding: 2px 8px;
-    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    font-size: 17px;   /* 별 글리프 — 계단 값 중 기존 18 에 가장 가까운 단 */
+    letter-spacing: 0;
 }
 
 .profile-meta {
@@ -401,7 +417,7 @@ main {
     border-radius: var(--radius);
     padding: 14px 18px;
     cursor: pointer;
-    transition: border-color 0.15s, background 0.15s;
+    transition: border-color var(--dogu-ease), background var(--dogu-ease);
 }
 
 .match-row:hover { background: var(--surface-2); }
@@ -411,7 +427,7 @@ main {
 
 .match-left { flex: none; width: 92px; }
 
-.match-place { font-size: 21px; font-weight: 900; }
+.match-place { font-size: 20px; font-weight: 900; }   /* 등수 숫자 — 900 유지 */
 .match-row.pl-1 .match-place { color: #f4c874; }
 .match-row.pl-top4 .match-place { color: #6fb6f9; }
 .match-row.pl-bottom .match-place { color: var(--text-faint); }
@@ -440,7 +456,7 @@ main {
 .augment-icon {
     width: 18px;
     height: 18px;
-    border-radius: 4px;
+    border-radius: var(--dogu-r-badge);
     background: var(--surface-2);
 }
 
@@ -457,7 +473,7 @@ main {
     gap: 4px;
     font-size: 12px;
     font-weight: 700;
-    border-radius: 999px;
+    border-radius: var(--dogu-r-pill);
     padding: 2px 9px 2px 5px;
     border: 1px solid transparent;
 }
@@ -506,7 +522,7 @@ main {
 .unit-icon {
     width: 44px;
     height: 44px;
-    border-radius: 8px;
+    border-radius: var(--dogu-r-ctl);
     border: 2px solid var(--cost-1);
     background: var(--surface-2);
     object-fit: cover;
@@ -540,7 +556,7 @@ main {
 .unit-item {
     width: 14px;
     height: 14px;
-    border-radius: 3px;
+    border-radius: var(--dogu-r-badge);
     background: var(--surface-2);
 }
 
@@ -557,7 +573,7 @@ main {
 .expand-caret {
     margin-top: 5px;
     color: var(--text-faint);
-    transition: transform 0.15s;
+    transition: transform 0.2s ease;
 }
 
 .match-row.expanded .expand-caret { transform: rotate(180deg); }
@@ -584,19 +600,24 @@ main {
     color: var(--text-faint);
     font-size: 12px;
     font-weight: 700;
-    padding: 8px 10px;
+    padding: 10px 12px;
     border-bottom: 1px solid var(--border);
     white-space: nowrap;
 }
 
 .detail-table td, .rank-table td {
-    padding: 7px 10px;
+    padding: 9px 12px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.04);
     vertical-align: middle;
     white-space: nowrap;
 }
 
 .detail-table tr:last-child td, .rank-table tr:last-child td { border-bottom: 0; }
+
+/* 행 hover (14-4) — 터치 기기에선 끈다 */
+@media (hover: hover) {
+    .rank-table tbody tr:hover, .detail-table tbody tr:hover { background: var(--surface-2); }
+}
 
 .detail-row-me { background: rgba(234, 183, 101, 0.07); }
 
@@ -605,29 +626,31 @@ main {
 .detail-place.pl-top4 { color: #6fb6f9; }
 .detail-place.pl-bottom { color: var(--text-faint); }
 
-.detail-name { font-weight: 600; }
+.detail-name { font-weight: 700; }
 .detail-name:hover { color: var(--accent); }
 .detail-name-unknown { color: var(--text-faint); }
 
 .detail-num { color: var(--text-dim); font-variant-numeric: tabular-nums; }
 
 .detail-table .unit { width: 30px; }
-.detail-table .unit-icon { width: 30px; height: 30px; border-radius: 6px; border-width: 1.5px; }
+.detail-table .unit-icon { width: 30px; height: 30px; border-radius: var(--dogu-r-badge); border-width: 1.5px; }
 .detail-table .unit-stars { display: none; }
 .detail-table .unit-items { display: none; }
 
 .more-btn {
     display: block;
     margin: 18px auto 0;
+    height: var(--dogu-ctl-md);
     background: var(--surface-2);
     border: 1px solid var(--border);
-    border-radius: 999px;
+    border-radius: var(--dogu-r-ctl);
     color: var(--text);
     cursor: pointer;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 700;
-    padding: 11px 34px;
-    transition: border-color 0.15s;
+    line-height: 1;
+    padding: 0 20px;
+    transition: border-color var(--dogu-ease);
 }
 
 .more-btn:hover { border-color: var(--accent); }
@@ -644,14 +667,17 @@ main {
 }
 
 .rank-filter {
+    height: var(--dogu-ctl-sm);
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 999px;
+    border-radius: var(--dogu-r-pill);
     color: var(--text-dim);
     cursor: pointer;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 700;
-    padding: 7px 18px;
+    line-height: 1;
+    padding: 0 12px;
+    white-space: nowrap;
 }
 
 .rank-filter.active {
@@ -668,7 +694,7 @@ main {
 }
 
 .rank-no { color: var(--text-faint); font-weight: 800; width: 52px; }
-.rank-name { font-weight: 600; }
+.rank-name { font-weight: 700; }
 .rank-name:hover { color: var(--accent); }
 .rank-name-pending { color: var(--text-faint); font-style: italic; }
 
@@ -683,13 +709,16 @@ main {
 }
 
 .pager-btn {
+    height: var(--dogu-ctl-md);
     background: var(--surface-2);
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: var(--dogu-r-ctl);
     color: var(--text);
     cursor: pointer;
     font-size: 13px;
-    padding: 7px 14px;
+    font-weight: 700;
+    line-height: 1;
+    padding: 0 14px;
 }
 
 .pager-btn:disabled { opacity: 0.35; cursor: default; }
@@ -723,6 +752,7 @@ main {
     }
 
     .stats-strip { gap: 14px; padding: 12px 14px; }
+    .rank-filter { height: 34px; }   /* 칩은 폰에서 34 (14-3) */
     .unit { width: 38px; }
     .unit-icon { width: 38px; height: 38px; }
 }
@@ -732,15 +762,17 @@ main {
    ========================================= */
 .refresh-btn {
     margin-left: auto;
+    height: var(--dogu-ctl-lg);
     background: var(--accent-strong);
     border: 0;
-    border-radius: 999px;
+    border-radius: var(--dogu-r-ctl);
     color: #fff;
     cursor: pointer;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
-    padding: 9px 20px;
-    transition: background 0.15s;
+    line-height: 1;
+    padding: 0 20px;
+    transition: background var(--dogu-ease);
     flex: none;
 }
 
@@ -810,13 +842,13 @@ main {
     display: flex;
     align-items: center;
     gap: 9px;
-    font-weight: 600;
+    font-weight: 700;
 }
 
 .stats-icon {
     width: 30px;
     height: 30px;
-    border-radius: 6px;
+    border-radius: var(--dogu-r-badge);
     border: 2px solid var(--cost-1);
 }
 
@@ -839,7 +871,7 @@ main {
 .stats-item-icon {
     width: 26px;
     height: 26px;
-    border-radius: 5px;
+    border-radius: var(--dogu-r-badge);
 }
 
 .stats-items { display: flex; gap: 3px; }

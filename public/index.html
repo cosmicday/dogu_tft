@@ -18,6 +18,14 @@
 
     <link rel="icon" type="image/png" href="%BASE%/favicon.png?v=%V%">
     <link rel="apple-touch-icon" href="%BASE%/favicon.png?v=%V%">
+    <!-- 글꼴 (2026-09-10 5사이트 통일). static 판 고정 — variable 판은 'Pretendard Variable' 로 등록돼 --dogu-font 가 못 찾는다.
+         비블로킹 로드: media=print 로 받아 두고 onload 에서 all 로 바꾼다. 그동안은 폴백(맑은 고딕)으로 먼저 그린다 -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css"
+          integrity="sha384-V1aeodcjJTo8c7lEQKPTnsMG6Yk8y6O/1kzqU/BCXw78Yw1W8XYFJGgjYa3oInYZ" crossorigin="anonymous"
+          media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css"
+          integrity="sha384-V1aeodcjJTo8c7lEQKPTnsMG6Yk8y6O/1kzqU/BCXw78Yw1W8XYFJGgjYa3oInYZ" crossorigin="anonymous"></noscript>
     <!-- 공통 UI 는 사이트 CSS 앞에. 사이트 CSS 는 :root 변수만 덮어쓴다 (DOGU_UI.md 1절) -->
     <link rel="stylesheet" href="%BASE%/dogu-ui.css?v=%V%">
     <link rel="stylesheet" href="%BASE%/style.css?v=%V%">

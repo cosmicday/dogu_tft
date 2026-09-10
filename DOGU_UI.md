@@ -368,3 +368,77 @@ git -C dogu_template status --short dogu-ui    # 원본 작업본이 미커밋 �
 - **글자 미디어 규칙은 768 에 둔다.** 다른 중단점(620·640…)에 글자 규칙을 두려면 그 중단점의 레이아웃 전환에 묶인 것이어야 한다. 레이아웃 중단점 자체는 사이트마다 달라도 된다.
 - 예외로 이름 붙은 자리: 공통 캐럿 9px 2곳 · pixlol `.lx-*`(lolalytics 그대로) · 사이트별 글리프 · 폰 입력 16.
 - 공통 파일 현재값: 12×9 · 13×10 · 14×3 · 15×2 · 17 · 20×2 · 21(브랜드) · 36/52(히어로) · 9×2(캐럿) · 16(폰 입력).
+
+---
+
+## 14. 디자인 토큰 · 사이트 공통 규격 (2026-09-10 확정 — 근거·실측은 `dogu_template/audit/unify-plan-20260910.md`)
+
+색은 사이트 것을 그대로 쓴다. **치수·모양·굵기·모션**만 5사이트 + 랜딩이 같은 값을 쓴다. 값은 `dogu-ui.css` `:root` 의 토큰(`--dogu-ctl-*` `--dogu-r-*` `--dogu-ease` `--dogu-card-pad` `--dogu-page-*` `--dogu-section-gap` `--dogu-title-ls`)에 있고, **사이트 CSS 는 이 절의 토큰만 `--dogu-*` 로 직접 참조한다** (그 외 `--dogu-*` 는 여전히 참조 금지 — 2절·8절).
+
+### 14-1. 글꼴
+
+- 6곳 전부 Pretendard **static** 판 하나. `<head>` 표준 스니펫 (maple 식 비블로킹):
+
+```html
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css"
+      integrity="sha384-V1aeodcjJTo8c7lEQKPTnsMG6Yk8y6O/1kzqU/BCXw78Yw1W8XYFJGgjYa3oInYZ" crossorigin="anonymous"
+      media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css"
+      integrity="sha384-V1aeodcjJTo8c7lEQKPTnsMG6Yk8y6O/1kzqU/BCXw78Yw1W8XYFJGgjYa3oInYZ" crossorigin="anonymous"></noscript>
+```
+
+- **variable 판 금지** (`'Pretendard Variable'` 로 등록돼 `--dogu-font` 가 못 찾는다).
+- 사이트 `body { font-family: var(--dogu-font); line-height: 1.5; }`. `font-size` 는 사이트 값 유지.
+- 사이트 `button, input, select, textarea { font-family: inherit; }` 리셋 필수 (없으면 버튼이 Arial).
+
+### 14-2. 글자 위계 (13절 계단 위의 "역할 → 값")
+
+| 역할 | 크기 / 굵기 | 그 외 |
+|---|---|---|
+| 페이지 제목 `.page-title` | **24 / 800** | `letter-spacing: var(--dogu-title-ls)` · `margin: 0 0 8px` |
+| 페이지 설명 `.page-desc` | 13 / 400 | 보조 텍스트색 · `margin: 0 0 20px` |
+| 섹션 제목 `.section-title` | **15 / 800** | `padding-left: 9px; border-left: 3px solid var(--accent 계열)` · `line-height: 1.2` · `margin: 26px 0 10px` (maple 마커를 공통으로) |
+| 카드 제목 `.card-title` 류 | **15 / 800** | 마커 없음 |
+| 큰 KPI · 캐릭터/소환사 이름 | **24 / 800** | `letter-spacing: var(--dogu-title-ls)` · 숫자는 `tabular-nums` |
+| 큰 표시(랭킹 제목) | 28 / 800 | |
+| 굵기 | **400 · 700 · 800** 만 | 900 은 브랜드·등수 숫자만. 600·500 은 쓰지 않는다 (컨트롤 → 700, 본문 → 400) |
+| 자간 | 20px 이상 제목·숫자만 `var(--dogu-title-ls)` | 나머지 0. 양수 자간 금지 |
+| 숫자 | 표 숫자 셀 · KPI 는 `font-variant-numeric: tabular-nums` | |
+
+### 14-3. 컨트롤
+
+높이는 `height` 로 고정하고 가로만 패딩 (`padding: 0 Npx`). `line-height` 는 컨트롤 안에서 1 로.
+
+| 요소 | 높이 | 글자 | 가로 패딩 | 모서리 | 테두리 |
+|---|---|---|---|---|---|
+| CTA (검색·불러오기·저장) | `--dogu-ctl-lg` 40 | 14 / 700 | 20px | `--dogu-r-ctl` 8 | 없음 (사이트 액센트 채움/그라데이션 그대로) |
+| 기본 버튼 | `--dogu-ctl-md` 34 | 13 / 700 | 14px | `--dogu-r-ctl` | 1px solid 사이트 line 토큰 |
+| 셀렉트 · 입력 | `--dogu-ctl-md` 34 | 13 / 400 (셀렉트 700) | 10~12px | `--dogu-r-ctl` | 1px solid |
+| 칩 · 필터 · 세그먼트 탭 | `--dogu-ctl-sm` 28 (≤768: 34) | 12 / 700 | 12px | `--dogu-r-pill` | 1px solid; active 는 액센트 채움 |
+| 밑줄형 탭 | `--dogu-ctl-tab` 36 | 13 / 700 | 14px | 0 | 하단 2px 액센트 |
+| 아이콘 버튼 | 34 × 34 | — | 0 | `--dogu-r-ctl` | 1px solid |
+| 배지 (티어·등급) | 자동 | 12 / 700 | `2px 6px` | `--dogu-r-badge` 4 | 없음 |
+| 전환 | `transition: background var(--dogu-ease), color var(--dogu-ease), border-color var(--dogu-ease)` | opacity·transform 은 `0.2s ease` | | | |
+
+### 14-4. 카드 · 표
+
+| | 값 |
+|---|---|
+| 카드·패널·표 래퍼 | `border-radius: var(--dogu-r-card)` · `border: 1px solid` 사이트 line 토큰 · 본문 `padding: var(--dogu-card-pad)` (16px 18px) · 그림자·배경은 사이트 것 |
+| `th` | 12 / 700 · 사이트 faint 텍스트색 · 왼쪽 정렬 · `padding: 10px 12px` · 하단 1px · `white-space: nowrap` · `text-transform: none` |
+| `td` | 13 / 400 · `padding: 9px 12px` · 하단 1px(소프트) · 숫자 열은 `tabular-nums` + 오른쪽 정렬 |
+| 행 hover | `@media (hover: hover) { tbody tr:hover { background: 사이트 surface-2 } }` |
+
+### 14-5. 폭 · 간격
+
+- **본문 폭 = 헤더 폭.** 사이트 `main`/`.container` 의 `max-width: var(--dogu-wrap)` · `padding: 0 16px`. (pixlol 은 자체 `--dogu-wrap: 1232px` 덮어쓰기 유지)
+- 페이지 상단 `padding-top: var(--dogu-page-top)` 24 · 하단 `var(--dogu-page-bottom)` 60.
+- 카드 사이 `var(--dogu-section-gap)` 16. 그리드 gap 은 안쪽 8 · 카드 그리드 12.
+- 글자 미디어 규칙 768 (13절). 레이아웃 중단점은 사이트 자유.
+
+### 14-6. 예외 (이름 붙은 자리)
+
+- pixlol `.lx-*`(lolalytics 그대로) · `.detail-table` 48px 고정 행 · `custom_values.js` 각주 인라인
+- maple 길드 검색 바 (월드 셀렉트 구조 유지, 높이만 `--dogu-ctl-lg`)
+- 공통 파일의 히어로 검색창(52/42) · 검색 버튼 알약 — 5절 그대로
