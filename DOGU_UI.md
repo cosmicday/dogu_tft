@@ -432,7 +432,7 @@ git -C dogu_template status --short dogu-ui    # 원본 작업본이 미커밋 �
 
 ### 14-5. 폭 · 간격
 
-- **본문 폭 = 헤더 폭.** 사이트 `main`/`.container` 의 `max-width: var(--dogu-wrap)` · `padding: 0 16px`. (pixlol 은 자체 `--dogu-wrap: 1232px` 덮어쓰기 유지)
+- **본문 폭 = 헤더 폭 = `--dogu-wrap` 1200** (2026-09-10 저녁 1120→1200: pixlol 랭킹 표·홈 5열 위젯이 1200 기준이라 1120 에선 열이 눌렸다). 사이트 `main`/`.container` 의 `max-width: var(--dogu-wrap)` · `padding: 0 16px`. 사이트별 오버라이드 없음
 - 페이지 상단 `padding-top: var(--dogu-page-top)` 24 · 하단 `var(--dogu-page-bottom)` 60.
 - 카드 사이 `var(--dogu-section-gap)` 16. 그리드 gap 은 안쪽 8 · 카드 그리드 12.
 - 글자 미디어 규칙 768 (13절). 레이아웃 중단점은 사이트 자유.
