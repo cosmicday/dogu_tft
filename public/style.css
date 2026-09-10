@@ -51,6 +51,7 @@
 /* 배경·폰트·글자색은 body.dogu-body(dogu-ui.css)가 깐다. 여기선 보조 속성만 */
 body {
     font-family: var(--dogu-font);   /* 14-1: Pretendard static (index.html 에서 로드) */
+    line-height: 1.5;               /* 2026-09-10 통일 5편 — 5사이트 공통 행간 (DOGU_UI.md 14-1) */
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
 }
