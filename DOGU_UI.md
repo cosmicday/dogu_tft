@@ -442,3 +442,9 @@ git -C dogu_template status --short dogu-ui    # 원본 작업본이 미커밋 �
 - pixlol `.lx-*`(lolalytics 그대로) · `.detail-table` 48px 고정 행 · `custom_values.js` 각주 인라인
 - maple 길드 검색 바 (월드 셀렉트 구조 유지, 높이만 `--dogu-ctl-lg`)
 - 공통 파일의 히어로 검색창(52/42) · 검색 버튼 알약 — 5절 그대로
+
+### 14-7. 적용 기록
+
+- **2026-09-10 적용 완료 — 6곳 전부** (pixlol · er · maple · loa · tft 1~5편, 랜딩 6편). 사이트별 변경 목록은 각 저장소 커밋 메시지, 근거는 `dogu_template/audit/unify-plan-20260910.md`.
+- 랜딩(`dogu_main`)은 `build.ps1` 이 이 폴더의 `dogu-ui.css` 를 `__DOGU_UI_CSS__` 자리에 **빌드 시 인라인**한다 (sync 대상 아님). 헤더 1단(`.dogu-gnb-utility` + `.dogu-brand`)과 푸터(`.dogu-footer`) 마크업을 손으로 쓰고, 색 토큰은 `:root` 에서 랜딩 팔레트로 되돌린다. 공통 CSS 를 고치면 랜딩도 다시 빌드·배포해야 한다.
+- 검증은 데스크톱 1280 헤드리스 캡처 + 폰은 CDP `Emulation.setDeviceMetricsOverride(390, mobile)` 로 `scrollWidth == innerWidth` 확인 (`--window-size=390` 캡처는 창 최소폭 때문에 가짜 넘침이 찍힌다).
