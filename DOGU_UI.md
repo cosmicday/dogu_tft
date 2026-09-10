@@ -73,12 +73,20 @@
 ## 3. 배경 구조
 
 ```
-body.dogu-body           background: var(--dogu-bg)           ← 루트 캔버스로 승격
-body.dogu-body::before   fixed, inset 0, z-index -2          ← 이미지 (var(--dogu-bg-pos) / cover, filter: blur(var(--dogu-bg-blur)))
-body.dogu-body::after    fixed, inset -150px, z-index -1      ← 오버레이 그라데이션
+body.dogu-body           background: var(--dogu-bg)                    ← 루트 캔버스로 승격
+body.dogu-body::before   fixed, top/left/right 0 + height 100lvh, z-index -2   ← 이미지 (var(--dogu-bg-pos) / cover, filter: blur(var(--dogu-bg-blur)))
+body.dogu-body::after    fixed, inset -150px, z-index -1               ← 오버레이 그라데이션
 ```
 
 - 페이지 전체를 덮는다. **히어로 안에만 이미지를 넣는 방식은 쓰지 않는다**
+- **★★ 그림 층의 높이는 `100lvh` 로 못 박는다 — `bottom: 0` 으로 두면 안 된다 (2026-09-08).**
+  폰은 스크롤할 때 주소창이 숨었다 나오면서 **뷰포트 높이가 바뀌는데**, 상자를 `bottom: 0` 으로
+  두면 높이가 따라 바뀌고 `cover` 가 그 높이에 맞춰 **그림을 다시 확대·축소한다** —
+  스크롤 방향에 따라 배경이 커졌다 작아졌다 한다 (pixlol 사용자 지적).
+  실측(폭 485 고정): 645px 에서 배율 0.899 / 749px 에서 1.045 — **주소창 하나에 16%** 다.
+  `vh`·`lvh` 는 주소창이 숨은 큰 뷰포트 기준으로 **고정**이라 스크롤해도 안 변한다. 데스크톱은 무변화.
+  **오버레이(`::after`)를 ±150px 늘려 둔 것과 같은 사정**이지만, 색은 늘려도 되고 그림은 늘리면
+  `cover` 가 확대되므로 **그림 쪽은 높이를 고정하는 방법을 쓴다**
 - er 원본은 이미지가 `body` 배경이고 오버레이가 `body::before` 하나다. 공통 파일은 블러 변수를 받으려고 이미지를 자기 레이어(`::before`)로 뺐다. 블러 0 이면 보이는 결과는 같다
 - **홈 / 비홈 농도 전환은 `body.dogu-home` 클래스다.** 라우터가 홈을 켤 때 `DoguUI.setHome(true)`, 다른 페이지로 갈 때 `setHome(false)`. 클래스가 없으면 진한(비홈) 쪽이 기본
 - **★ 그 클래스가 ⌂ 의 활성 밑줄도 켠다 (2026-08-27).** 홈은 어떤 탭의 페이지도 아니라 2단 네비에 밑줄이 아무 데도 없었는데, 이제 `body.dogu-home` 일 때 `.dogu-nav-home` 이 네비 탭과 같은 밑줄·흰 글자를 받는다. **CSS 뿐이라 사이트 JS 는 손댈 게 없다** — 라우터가 `setHome(true)` 만 부르면 된다. 폰(≤768px)은 ⌂ 를 숨기므로 무영향. **홈에서 특정 탭을 `setActiveNav` 로 켜 두면 밑줄이 둘이 된다** (pixlol 이 전적검색을 켜 두고 있었다 — 홈에서는 끄는 게 맞다)
