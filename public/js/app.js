@@ -1,7 +1,7 @@
 /* ============================================================
    app.js — 페이지 동작과 화면 배선 (TFT 전적검색)
 
-   페이지: 홈(검색) · 소환사 전적 · 랭킹 · 약관/개인정보
+   페이지: 홈(검색 + 랭킹/통계 위젯) · 소환사 전적 · 랭킹 · 통계 · 약관/개인정보
    base/router/store/api/ui 는 dogu_template 그대로 재사용한다.
    ============================================================ */
 (function (App) {
@@ -226,8 +226,10 @@
                 '</tr>';
         }).join('');
 
-        return '<div class="detail-scroll"><table class="detail-table">' +
-            '<thead><tr><th>순위</th><th>소환사</th><th>레벨</th><th>라운드</th><th>딜량</th><th>덱</th></tr></thead>' +
+        // 공통 스크롤 래퍼 — 펼칠 때 DoguUI.scrollHint 를 불러 오른쪽 페이드를 붙인다 (S-2, DOGU_UI.md 15-1)
+        return '<p class="dogu-scroll-hint">옆으로 밀어 더 볼 수 있습니다</p>' +
+            '<div class="dogu-scroll-wrap"><table class="detail-table">' +
+            '<thead><tr><th>순위</th><th>소환사</th><th class="num">레벨</th><th class="num">라운드</th><th class="num">딜량</th><th>덱</th></tr></thead>' +
             '<tbody>' + rows + '</tbody></table></div>';
     }
 
@@ -244,7 +246,7 @@
             '<div class="match-list" id="match-list">' +
             (shown.length
                 ? shown.map(matchRowHtml).join('')
-                : '<div class="empty">해당하는 전적이 없습니다.</div>') +
+                : DoguUI.emptyHtml({ icon: '🎮', title: '해당하는 전적이 없습니다', body: '다른 큐를 고르거나 전적 갱신을 눌러 최신 게임을 불러오세요.' })) +
             '</div>' +
             (summonerState.hasMore ? '<button class="more-btn" type="button" id="more-btn">전적 더 보기</button>' : '');
     }
@@ -296,7 +298,7 @@
 
     function loadSummonerPage(riotId, refresh) {
         var body = document.getElementById('summoner-body');
-        if (body && !refresh) body.innerHTML = App.ui.loading('전적을 불러오는 중입니다...');
+        if (body && !refresh) body.innerHTML = '<div class="skel-box">' + DoguUI.skelRowsHtml(8) + '</div>';   // M-7: 글자 한 줄 대신 자리막이
 
         var refreshBtn = document.getElementById('refresh-btn');
         if (refreshBtn) { refreshBtn.disabled = true; refreshBtn.textContent = '갱신 중...'; }
@@ -317,10 +319,7 @@
                 return;
             }
             if (!body) return;
-            body.innerHTML = '<div class="error-box">' +
-                '<div class="error-msg">' + esc(err.message) + '</div>' +
-                '<button class="more-btn" type="button" id="retry-btn">다시 시도</button>' +
-                '</div>';
+            body.innerHTML = DoguUI.emptyHtml({ icon: '⚠️', title: '전적을 불러오지 못했습니다', body: err.message, retry: { text: '다시 시도', id: 'retry-btn' } });
         });
     }
 
@@ -347,10 +346,11 @@
     }
 
     // ------------------------------------------------------------
-    // 랭킹 페이지
+    // 랭킹 페이지 — 표 + aside(닉네임 찾기 · 커트라인) 2단 (M-1). 행 렌더는 홈 위젯과 공유한다
     // ------------------------------------------------------------
-    var rankingState = null;   // { players, updatedAt, filter, page }
+    var rankingState = null;   // { players, updatedAt, filter, page, hit }
     var RANKING_PAGE_SIZE = 100;
+    var SCROLL_HINT = '<p class="dogu-scroll-hint">옆으로 밀어 더 볼 수 있습니다</p>';
 
     var TIER_FILTERS = [
         { key: 'ALL', label: '전체' },
@@ -359,51 +359,146 @@
         { key: 'MASTER', label: '마스터' }
     ];
 
+    function setMeta(id, text) {
+        var el = document.getElementById(id);
+        if (el) el.textContent = text || '';
+    }
+
+    function tierFilterHtml(current) {
+        return '<div class="rank-filters">' + TIER_FILTERS.map(function (f) {
+            return '<button class="rank-filter' + (current === f.key ? ' active' : '') +
+                '" type="button" data-filter="' + f.key + '">' + f.label + '</button>';
+        }).join('') + '</div>';
+    }
+
+    // 랭킹 행 하나. compact = 홈 위젯(순방/게임 열 없음)
+    function rankRowHtml(p, compact) {
+        var games = p.wins + p.losses;
+        var nameCell = p.name
+            ? '<a class="rank-name" href="' + esc(App.url('/summoner/' + encodeURIComponent(p.name))) + '" data-link>' + esc(p.name) + '</a>'
+            : '<span class="rank-name rank-name-pending">집계 중…</span>';
+        var hit = !compact && rankingState && rankingState.hit === p.rank;
+        return '<tr data-rank="' + p.rank + '"' + (hit ? ' class="rank-row-hit"' : '') + '>' +
+            '<td class="rank-no">' + p.rank + '</td>' +
+            '<td class="rank-name-cell">' + nameCell + '</td>' +
+            '<td><span class="tier-text tier-' + esc(p.tier) + '">' + esc(tft.tierKo(p.tier)) + '</span></td>' +
+            '<td class="detail-num">' + Number(p.lp).toLocaleString() + ' LP</td>' +
+            '<td class="detail-num">' + (games > 0 ? Math.round(p.wins / games * 100) + '%' : '-') + '</td>' +
+            (compact ? '' : '<td class="detail-num col-games">' + p.wins + ' / ' + games + '</td>') +
+            '</tr>';
+    }
+
+    function rankTableHtml(players, compact) {
+        return '<table class="rank-table' + (compact ? ' compact' : '') + '">' +
+            '<thead><tr><th class="col-no">#</th><th class="col-name">소환사</th><th class="col-tier">티어</th>' +
+            '<th class="num col-lp">LP</th><th class="num col-top4">순방률</th>' +
+            (compact ? '' : '<th class="num col-games">순방 / 게임</th>') + '</tr></thead>' +
+            '<tbody>' + players.map(function (p) { return rankRowHtml(p, compact); }).join('') + '</tbody></table>';
+    }
+
+    // 숫자 페이지 5개 + ◀▶ (m-7). 한 페이지뿐이면 그리지 않는다
+    function pagerHtml(page, totalPages) {
+        if (totalPages <= 1) return '';
+        var first = Math.max(0, Math.min(page - 2, totalPages - 5));
+        var last = Math.min(totalPages, first + 5);
+        var nums = '';
+        for (var i = first; i < last; i++) {
+            nums += '<button class="pager-btn' + (i === page ? ' active' : '') + '" type="button" data-page="' + i + '"' +
+                (i === page ? ' aria-current="page"' : '') + ' aria-label="' + (i + 1) + '페이지">' + (i + 1) + '</button>';
+        }
+        return '<nav class="rank-pager" aria-label="랭킹 페이지">' +
+            '<button class="pager-btn" type="button" data-page="prev" aria-label="이전 페이지"' + (page === 0 ? ' disabled' : '') + '>◀</button>' +
+            nums +
+            '<button class="pager-btn" type="button" data-page="next" aria-label="다음 페이지"' + (page >= totalPages - 1 ? ' disabled' : '') + '>▶</button>' +
+            '</nav>';
+    }
+
+    function filteredPlayers(st) {
+        return st.filter === 'ALL' ? st.players : st.players.filter(function (p) { return p.tier === st.filter; });
+    }
+
     function renderRanking() {
-        var body = document.getElementById('ranking-body');
-        if (!body || !rankingState) return;
+        var main = document.getElementById('rank-main');
+        if (!main || !rankingState) return;
 
         var st = rankingState;
-        var players = st.filter === 'ALL'
-            ? st.players
-            : st.players.filter(function (p) { return p.tier === st.filter; });
-
+        var players = filteredPlayers(st);
         var totalPages = Math.max(1, Math.ceil(players.length / RANKING_PAGE_SIZE));
         if (st.page >= totalPages) st.page = totalPages - 1;
         var pageItems = players.slice(st.page * RANKING_PAGE_SIZE, (st.page + 1) * RANKING_PAGE_SIZE);
 
-        var filterHtml = '<div class="rank-filters">' + TIER_FILTERS.map(function (f) {
-            return '<button class="rank-filter' + (st.filter === f.key ? ' active' : '') +
-                '" type="button" data-filter="' + f.key + '">' + f.label + '</button>';
-        }).join('') + '</div>';
+        var bodyHtml;
+        if (!st.players.length) {
+            bodyHtml = DoguUI.emptyHtml({ icon: '🏆', title: '랭킹을 준비하는 중입니다', body: '10분마다 갱신됩니다. 잠시 후 다시 확인해 주세요.', retry: { text: '다시 확인', id: 'ranking-retry' } });
+        } else if (!pageItems.length) {
+            bodyHtml = DoguUI.emptyHtml({ icon: '🏆', title: '이 티어의 랭커가 아직 없습니다', body: '다른 티어를 고르거나 잠시 후 다시 확인해 주세요.' });
+        } else {
+            bodyHtml = SCROLL_HINT + '<div class="dogu-scroll-wrap" id="rank-wrap">' + rankTableHtml(pageItems, false) + '</div>' +
+                pagerHtml(st.page, totalPages);
+        }
+        main.innerHTML = tierFilterHtml(st.filter) + bodyHtml;
+        DoguUI.scrollHint('#rank-wrap');
+    }
 
-        var rowsHtml = pageItems.map(function (p) {
-            var games = p.wins + p.losses;
-            var nameCell = p.name
-                ? '<a class="rank-name" href="' + esc(App.url('/summoner/' + encodeURIComponent(p.name))) + '" data-link>' + esc(p.name) + '</a>'
-                : '<span class="rank-name rank-name-pending">집계 중…</span>';
-            return '<tr>' +
-                '<td class="rank-no">' + p.rank + '</td>' +
-                '<td>' + nameCell + '</td>' +
-                '<td><span class="tier-badge tier-' + esc(p.tier) + '">' + esc(tft.tierKo(p.tier)) + '</span></td>' +
-                '<td class="detail-num">' + Number(p.lp).toLocaleString() + ' LP</td>' +
-                '<td class="detail-num">' + (games > 0 ? Math.round(p.wins / games * 100) + '%' : '-') + '</td>' +
-                '<td class="detail-num">' + p.wins + ' / ' + games + '</td>' +
-                '</tr>';
-        }).join('');
+    // 커트라인 = 현재 목록에서 그 티어의 가장 낮은 LP (랭킹 응답만으로 계산, 0 LP 제외)
+    function tierCutoff(players, tier) {
+        var min = null;
+        for (var i = 0; i < players.length; i++) {
+            var p = players[i];
+            if (p.tier === tier && p.lp > 0 && (min === null || p.lp < min)) min = p.lp;   // 0 LP(승급 직후·감소) 는 커트라인이 아니다
+        }
+        return min;
+    }
 
-        var pagerHtml = '<div class="rank-pager">' +
-            '<button class="pager-btn" type="button" data-page="prev"' + (st.page === 0 ? ' disabled' : '') + '>◀</button>' +
-            '<span class="pager-info">' + (st.page + 1) + ' / ' + totalPages + '</span>' +
-            '<button class="pager-btn" type="button" data-page="next"' + (st.page >= totalPages - 1 ? ' disabled' : '') + '>▶</button>' +
-            '</div>';
+    function rankingAsideHtml() {
+        var st = rankingState;
+        var chal = tierCutoff(st.players, 'CHALLENGER');
+        var gm = tierCutoff(st.players, 'GRANDMASTER');
+        var cutHtml = '';
+        if (chal !== null || gm !== null) {
+            cutHtml = '<div class="rank-card"><div class="rank-card-title">커트라인</div>' +
+                (chal !== null ? '<div class="cut-row"><span class="tier-text tier-CHALLENGER">챌린저</span><span class="cut-lp">' + Number(chal).toLocaleString() + ' LP</span></div>' : '') +
+                (gm !== null ? '<div class="cut-row"><span class="tier-text tier-GRANDMASTER">그랜드마스터</span><span class="cut-lp">' + Number(gm).toLocaleString() + ' LP</span></div>' : '') +
+                '<p class="cut-note">현재 랭킹에 든 랭커 중 가장 낮은 LP · 승급 기준과는 다를 수 있습니다</p></div>';
+        }
+        return '<div class="rank-card">' +
+            '<label class="rank-card-title" for="rank-find">닉네임 찾기</label>' +
+            '<input class="rank-find" id="rank-find" type="search" placeholder="소환사명" autocomplete="off" spellcheck="false">' +
+            '<div class="rank-find-result" id="rank-find-result" aria-live="polite"></div>' +
+            '</div>' + cutHtml;
+    }
 
-        body.innerHTML = filterHtml +
-            (pageItems.length
-                ? '<div class="detail-scroll"><table class="rank-table">' +
-                '<thead><tr><th>#</th><th>소환사</th><th>티어</th><th>LP</th><th>순방률</th><th>순방 / 게임</th></tr></thead>' +
-                '<tbody>' + rowsHtml + '</tbody></table></div>' + pagerHtml
-                : '<div class="empty">랭킹 데이터를 준비 중입니다. 잠시 후 새로고침해 주세요.</div>');
+    var findTimer = null;
+    function findRanker(query) {
+        var st = rankingState;
+        if (!st) return;
+        var result = document.getElementById('rank-find-result');
+        var q = (query || '').trim().toLowerCase();
+        if (!q) {
+            st.hit = null;
+            if (result) result.textContent = '';
+            renderRanking();
+            return;
+        }
+        var hit = null;
+        for (var i = 0; i < st.players.length; i++) {
+            var n = st.players[i].name;
+            if (n && n.toLowerCase().indexOf(q) !== -1) { hit = st.players[i]; break; }
+        }
+        if (!hit) {
+            st.hit = null;
+            if (result) result.textContent = '목록에 없는 소환사입니다. 위 검색창에서 전적을 찾아보세요.';
+            renderRanking();
+            return;
+        }
+        if (st.filter !== 'ALL' && hit.tier !== st.filter) st.filter = 'ALL';
+        var idx = filteredPlayers(st).indexOf(hit);
+        st.page = Math.floor(idx / RANKING_PAGE_SIZE);
+        st.hit = hit.rank;
+        if (result) result.textContent = hit.rank + '위 · ' + hit.name + ' · ' + Number(hit.lp).toLocaleString() + ' LP';
+        renderRanking();
+        var row = document.querySelector('#rank-main tr[data-rank="' + hit.rank + '"]');
+        if (row && row.scrollIntoView) row.scrollIntoView({ block: 'center' });
     }
 
     // ------------------------------------------------------------
@@ -440,69 +535,142 @@
             '<span>' + esc(it ? it.name : row.id.replace(/^TFT_Item_/, '')) + '</span></div>';
     }
 
+    // 표에 올릴 행: 정적 데이터에 없는 항목(소환물 등 원본 ID 로만 남는 것)은 뺀다 (S-4).
+    // 정적 데이터가 아예 안 왔으면(전부 미해석) 거르지 않고 그대로 보여 준다
+    function statsRows(data, tab, sort) {
+        var lookup = tab === 'units' ? tft.champ : tab === 'traits' ? tft.trait : tft.item;
+        var rows = (data[tab] || []).slice();
+        var known = rows.filter(function (r) { return !!lookup(r.id); });
+        if (known.length) rows = known;
+        if (sort === 'pick') rows.sort(function (a, b) { return b.games - a.games; });
+        else rows.sort(function (a, b) { return a.avgPlacement - b.avgPlacement; });
+        return rows;
+    }
+
+    // 통계 행 하나. compact = 홈 위젯(1위율 · 추천 아이템 열 없음)
+    function statsRowHtml(tab, r, i, compact) {
+        var itemsCell = '';
+        if (tab === 'units' && !compact) {
+            var items = (r.items || []).map(function (n) { return tft.item(n); }).filter(function (it) { return it && it.icon; });
+            itemsCell = '<td>' + (items.length
+                ? '<div class="stats-items">' + items.map(function (it) {
+                    return '<img class="unit-item" src="' + esc(it.icon) + '" alt="' + esc(it.name) + '" title="' + esc(it.name) + '" loading="lazy">';
+                }).join('') + '<span class="stats-items-name">' + esc(items[0].name) + (items.length > 1 ? ' 외 ' + (items.length - 1) : '') + '</span></div>'
+                : '<span class="stats-none">—</span>') + '</td>';
+        }
+        return '<tr>' +
+            '<td class="rank-no">' + (i + 1) + '</td>' +
+            '<td class="stats-name-cell">' + statsNameCell(tab, r) + '</td>' +
+            '<td class="detail-num">' + pct(r.pickRate) + '</td>' +
+            '<td class="detail-num stats-avg">#' + r.avgPlacement.toFixed(2) + '</td>' +
+            '<td class="detail-num">' + pct(r.top4Rate) + '</td>' +
+            (compact ? '' : '<td class="detail-num col-win">' + pct(r.winRate) + '</td>') +
+            itemsCell +
+            '</tr>';
+    }
+
+    function statsTabsHtml(tab) {
+        return '<div class="stats-tabs" role="tablist">' + STATS_TABS.map(function (t) {
+            return '<button class="stats-tab' + (tab === t.key ? ' active' : '') + '" type="button" role="tab" aria-selected="' + (tab === t.key) +
+                '" data-stats-tab="' + t.key + '">' + t.label + '</button>';
+        }).join('') + '</div>';
+    }
+
+    // 표 머리 — 정렬은 픽률 · 평균 등수 머리 클릭 (M-5). compact 는 홈 위젯(정렬 없음)
+    function statsHeadHtml(tab, sort, compact) {
+        var label = tab === 'units' ? '챔피언' : tab === 'traits' ? '시너지' : '아이템';
+        function sortTh(key, text, glyph) {
+            if (compact) return '<th class="num">' + text + '</th>';
+            var on = sort === key;
+            return '<th class="num sortable' + (on ? ' sorted' : '') + '"' + (on ? ' aria-sort="' + (key === 'pick' ? 'descending' : 'ascending') + '"' : '') + '>' +
+                '<button class="th-sort" type="button" data-stats-sort="' + key + '" title="' + text + '순으로 정렬">' + text +
+                '<span class="sort-glyph" aria-hidden="true">' + (on ? glyph : '') + '</span></button></th>';
+        }
+        return '<thead><tr><th class="col-no">#</th><th>' + label + '</th>' +
+            sortTh('pick', '픽률', '▼') + sortTh('avg', '평균 등수', '▲') +
+            '<th class="num">순방률</th>' +
+            (compact ? '' : '<th class="num col-win">1위율</th>' + (tab === 'units' ? '<th>추천 아이템</th>' : '')) +
+            '</tr></thead>';
+    }
+
+    function statsReady(data) {
+        return !!(data && !data.building && data.units && data.units.length);
+    }
+
     function renderStats() {
         var body = document.getElementById('stats-body');
         if (!body || !statsState) return;
 
         var data = statsState.data;
-        var desc = document.getElementById('stats-desc');
+        var tab = statsState.tab;
+        var tabsHtml = statsTabsHtml(tab);
 
-        if (!data || data.building || !data.units || !data.units.length) {
-            if (desc) desc.textContent = '상위 랭커의 랭크 게임을 수집해 집계합니다.';
-            body.innerHTML = '<div class="empty">아직 표본을 수집하는 중입니다' +
-                (data && data.sample ? ' (현재 ' + data.sample + '게임)' : '') +
-                '. 잠시 후 다시 확인해 주세요.</div>';
+        if (!statsReady(data)) {
+            setMeta('stats-meta', data && data.sample ? '· 현재 ' + Number(data.sample).toLocaleString() + '게임' : '');
+            body.innerHTML = tabsHtml + DoguUI.emptyHtml({
+                icon: '📊', title: '아직 표본을 수집하는 중입니다',
+                body: '표본이 쌓이면 자동으로 채워집니다. 잠시 후 다시 확인해 주세요.',
+                retry: { text: '다시 확인', id: 'stats-retry' }
+            });
             return;
         }
 
-        if (desc) {
-            desc.textContent = '세트 ' + data.setNumber + ' · 상위 랭커 랭크 게임 ' + Number(data.sample).toLocaleString() +
-                '게임 표본 · ' + tft.timeAgo(data.updatedAt) + ' 갱신';
-        }
+        setMeta('stats-meta', '· 세트 ' + data.setNumber + ' · ' + Number(data.sample).toLocaleString() + '게임 표본 · ' + tft.timeAgo(data.updatedAt) + ' 갱신');
 
-        var tab = statsState.tab;
-        var rows = (data[tab] || []).slice();
-        if (statsState.sort === 'pick') rows.sort(function (a, b) { return b.games - a.games; });
-        else rows.sort(function (a, b) { return a.avgPlacement - b.avgPlacement; });
+        var rows = statsRows(data, tab, statsState.sort);
+        body.innerHTML = tabsHtml + (rows.length
+            ? SCROLL_HINT + '<div class="dogu-scroll-wrap" id="stats-wrap"><table class="rank-table stats-table">' +
+                statsHeadHtml(tab, statsState.sort, false) +
+                '<tbody>' + rows.map(function (r, i) { return statsRowHtml(tab, r, i, false); }).join('') + '</tbody></table></div>' +
+                '<p class="stats-note">픽률은 보드(참가자) 기준입니다. 표본이 적은 항목(게임 수 하위)은 집계에서 제외됩니다.</p>'
+            : DoguUI.emptyHtml({ icon: '📊', title: '표시할 항목이 없습니다', body: '표본이 적은 항목은 집계에서 제외됩니다. 표본이 쌓이면 채워집니다.' }));
+        DoguUI.scrollHint('#stats-wrap');
+    }
 
-        var tabsHtml = '<div class="rank-filters">' + STATS_TABS.map(function (t) {
-            return '<button class="rank-filter' + (tab === t.key ? ' active' : '') +
-                '" type="button" data-stats-tab="' + t.key + '">' + t.label + '</button>';
-        }).join('') +
-            '<span class="stats-sort">' +
-            '<button class="rank-filter' + (statsState.sort === 'avg' ? ' active' : '') + '" type="button" data-stats-sort="avg">평균 등수순</button>' +
-            '<button class="rank-filter' + (statsState.sort === 'pick' ? ' active' : '') + '" type="button" data-stats-sort="pick">픽률순</button>' +
-            '</span></div>';
+    // ------------------------------------------------------------
+    // 홈 위젯 — 랭킹 TOP 10 · 유닛 통계 TOP 5 (S-1). 같은 API · 같은 행 렌더
+    // ------------------------------------------------------------
+    function renderHomeRanking(players) {
+        var box = document.getElementById('home-ranking');
+        if (!box) return;
+        var top = (players || []).slice(0, 10);
+        box.innerHTML = top.length
+            ? SCROLL_HINT + '<div class="dogu-scroll-wrap" id="home-rank-wrap">' + rankTableHtml(top, true) + '</div>'
+            : '<div class="panel-pad">' + DoguUI.emptyHtml({ icon: '🏆', title: '랭킹을 준비하는 중입니다', body: '10분마다 갱신됩니다.' }) + '</div>';
+        DoguUI.scrollHint('#home-rank-wrap');
+    }
 
-        var headExtra = tab === 'units' ? '<th>추천 아이템</th>' : '';
-        var rowsHtml = rows.map(function (r, i) {
-            var itemsCell = '';
-            if (tab === 'units') {
-                itemsCell = '<td><div class="stats-items">' + (r.items || []).map(function (n) {
-                    var it = tft.item(n);
-                    return it && it.icon
-                        ? '<img class="unit-item" src="' + esc(it.icon) + '" alt="" title="' + esc(it.name) + '" loading="lazy">'
-                        : '';
-                }).join('') + '</div></td>';
-            }
-            return '<tr>' +
-                '<td class="rank-no">' + (i + 1) + '</td>' +
-                '<td>' + statsNameCell(tab, r) + '</td>' +
-                '<td class="detail-num">' + pct(r.pickRate) + '</td>' +
-                '<td class="detail-num stats-avg">#' + r.avgPlacement.toFixed(2) + '</td>' +
-                '<td class="detail-num">' + pct(r.top4Rate) + '</td>' +
-                '<td class="detail-num">' + pct(r.winRate) + '</td>' +
-                itemsCell +
-                '</tr>';
-        }).join('');
+    function renderHomeStats(data) {
+        var box = document.getElementById('home-stats');
+        if (!box) return;
+        var rows = statsReady(data) ? statsRows(data, 'units', 'avg').slice(0, 5) : [];
+        box.innerHTML = rows.length
+            ? SCROLL_HINT + '<div class="dogu-scroll-wrap" id="home-stats-wrap"><table class="rank-table stats-table compact">' +
+                statsHeadHtml('units', 'avg', true) +
+                '<tbody>' + rows.map(function (r, i) { return statsRowHtml('units', r, i, true); }).join('') + '</tbody></table></div>'
+            : '<div class="panel-pad">' + DoguUI.emptyHtml({ icon: '📊', title: '아직 표본을 수집하는 중입니다', body: '표본이 쌓이면 자동으로 채워집니다.' }) + '</div>';
+        DoguUI.scrollHint('#home-stats-wrap');
+    }
 
-        body.innerHTML = tabsHtml +
-            '<div class="detail-scroll"><table class="rank-table stats-table">' +
-            '<thead><tr><th>#</th><th>' + (tab === 'units' ? '챔피언' : tab === 'traits' ? '시너지' : '아이템') + '</th>' +
-            '<th>픽률</th><th>평균 등수</th><th>순방률</th><th>1위율</th>' + headExtra + '</tr></thead>' +
-            '<tbody>' + rowsHtml + '</tbody></table></div>' +
-            '<p class="stats-note">픽률은 보드(참가자) 기준입니다. 표본이 적은 항목(' +
-            '게임 수 하위)은 집계에서 제외됩니다.</p>';
+    function loadHome() {
+        var rankBox = document.getElementById('home-ranking');
+        var statsBox = document.getElementById('home-stats');
+        if (rankBox) rankBox.innerHTML = '<div class="skel-box">' + DoguUI.skelRowsHtml(10) + '</div>';
+        if (statsBox) statsBox.innerHTML = '<div class="skel-box">' + DoguUI.skelRowsHtml(5) + '</div>';
+
+        var staticReady = tft.loadStatic().catch(function () { return null; });
+
+        App.api.get('/ranking').then(function (data) {
+            renderHomeRanking(data.players);
+        }, function (err) {
+            if (rankBox) rankBox.innerHTML = '<div class="panel-pad">' + DoguUI.emptyHtml({ icon: '⚠️', title: '랭킹을 불러오지 못했습니다', body: err.message, retry: { text: '다시 시도', id: 'home-retry-rank' } }) + '</div>';
+        });
+
+        Promise.all([staticReady, App.api.get('/stats')]).then(function (results) {
+            renderHomeStats(results[1]);
+        }, function (err) {
+            if (statsBox) statsBox.innerHTML = '<div class="panel-pad">' + DoguUI.emptyHtml({ icon: '⚠️', title: '통계를 불러오지 못했습니다', body: err.message, retry: { text: '다시 시도', id: 'home-retry-stats' } }) + '</div>';
+        });
     }
 
     // ------------------------------------------------------------
@@ -514,6 +682,7 @@
             var input = document.getElementById('dogu-search-input');
             if (input) input.value = '';
             if (window.DoguUI) DoguUI.showSearchError('');
+            loadHome();
         },
 
         summoner: function (ctx) {
@@ -525,7 +694,12 @@
 
         ranking: function () {
             var body = document.getElementById('ranking-body');
-            if (body) body.innerHTML = App.ui.loading('랭킹을 불러오는 중입니다...');
+            if (!body) return;
+            // 2단 골격을 먼저 세우고 표 자리엔 칩 + 스켈레톤 (M-7: 표가 와도 높이가 크게 안 뛴다)
+            body.innerHTML = '<div class="rank-layout">' +
+                '<div class="rank-main" id="rank-main">' + tierFilterHtml((rankingState && rankingState.filter) || 'ALL') +
+                '<div class="skel-box">' + DoguUI.skelRowsHtml(10) + '</div></div>' +
+                '<aside class="rank-aside" id="rank-aside"></aside></div>';
 
             Promise.all([
                 tft.loadStatic().catch(function () { return null; }),
@@ -536,21 +710,22 @@
                     players: data.players || [],
                     updatedAt: data.updatedAt,
                     filter: (rankingState && rankingState.filter) || 'ALL',
-                    page: 0
+                    page: 0,
+                    hit: null
                 };
-                var updated = document.getElementById('ranking-updated');
-                if (updated && data.updatedAt) {
-                    updated.textContent = 'KR 서버 랭크 TFT 상위 랭커 — ' + tft.timeAgo(data.updatedAt) + ' 갱신';
-                }
+                setMeta('ranking-meta', data.updatedAt ? '· ' + tft.timeAgo(data.updatedAt) + ' 갱신' : '· 10분마다 갱신');
+                var aside = document.getElementById('rank-aside');
+                if (aside) aside.innerHTML = rankingAsideHtml();
                 renderRanking();
             }, function (err) {
-                if (body) body.innerHTML = '<div class="empty">' + esc(err.message) + '</div>';
+                var main = document.getElementById('rank-main');
+                if (main) main.innerHTML = DoguUI.emptyHtml({ icon: '⚠️', title: '랭킹을 불러오지 못했습니다', body: err.message, retry: { text: '다시 시도', id: 'ranking-retry' } });
             });
         },
 
         stats: function () {
             var body = document.getElementById('stats-body');
-            if (body) body.innerHTML = App.ui.loading('통계를 불러오는 중입니다...');
+            if (body) body.innerHTML = statsTabsHtml((statsState && statsState.tab) || 'units') + '<div class="skel-box">' + DoguUI.skelRowsHtml(10) + '</div>';
 
             Promise.all([
                 tft.loadStatic().catch(function () { return null; }),
@@ -563,7 +738,8 @@
                 };
                 renderStats();
             }, function (err) {
-                if (body) body.innerHTML = '<div class="empty">' + esc(err.message) + '</div>';
+                if (body) body.innerHTML = statsTabsHtml((statsState && statsState.tab) || 'units') +
+                    DoguUI.emptyHtml({ icon: '⚠️', title: '통계를 불러오지 못했습니다', body: err.message, retry: { text: '다시 시도', id: 'stats-retry' } });
             });
         },
 
@@ -689,6 +865,7 @@
                     if (detail) {
                         detail.hidden = !detail.hidden;
                         row.classList.toggle('expanded', !detail.hidden);
+                        if (!detail.hidden) DoguUI.scrollHint(detail.querySelector('.dogu-scroll-wrap'));   // 펼친 뒤에야 폭을 잰다
                     }
                 }
             });
@@ -698,6 +875,7 @@
         var rankingBody = document.getElementById('ranking-body');
         if (rankingBody) {
             rankingBody.addEventListener('click', function (e) {
+                if (e.target.closest('#ranking-retry')) { App.pages.ranking(); return; }
                 var filter = e.target.closest('.rank-filter');
                 if (filter && rankingState) {
                     rankingState.filter = filter.getAttribute('data-filter');
@@ -707,10 +885,18 @@
                 }
                 var pager = e.target.closest('.pager-btn');
                 if (pager && !pager.disabled && rankingState) {
-                    rankingState.page += pager.getAttribute('data-page') === 'next' ? 1 : -1;
+                    var to = pager.getAttribute('data-page');
+                    rankingState.page = to === 'next' ? rankingState.page + 1 : to === 'prev' ? rankingState.page - 1 : Number(to);
                     renderRanking();
                     window.scrollTo(0, 0);
                 }
+            });
+            // 닉네임 찾기 (aside 입력) — 입력이 멈춘 뒤 200ms 에 목록에서 찾아 그 페이지로 옮기고 행을 표시한다
+            rankingBody.addEventListener('input', function (e) {
+                var find = e.target.closest('#rank-find');
+                if (!find) return;
+                if (findTimer) clearTimeout(findTimer);
+                findTimer = setTimeout(function () { findRanker(find.value); }, 200);
             });
         }
 
@@ -718,6 +904,7 @@
         var statsBody = document.getElementById('stats-body');
         if (statsBody) {
             statsBody.addEventListener('click', function (e) {
+                if (e.target.closest('#stats-retry')) { App.pages.stats(); return; }
                 var tabBtn = e.target.closest('[data-stats-tab]');
                 if (tabBtn && statsState) {
                     statsState.tab = tabBtn.getAttribute('data-stats-tab');
@@ -732,9 +919,14 @@
             });
         }
 
-        App.router.start();
+        // 홈 위젯 — 실패 시 다시 시도
+        var homePage = document.getElementById('page-home');
+        if (homePage) {
+            homePage.addEventListener('click', function (e) {
+                if (e.target.closest('#home-retry-rank, #home-retry-stats')) loadHome();
+            });
+        }
 
-        // 홈에 먼저 들어온 사용자를 위해 정적 데이터를 미리 데워 둔다
-        tft.loadStatic().catch(function () { /* 실패해도 페이지 진입 시 재시도 */ });
+        App.router.start();
     });
 })(window.App);

@@ -442,9 +442,56 @@ git -C dogu_template status --short dogu-ui    # 원본 작업본이 미커밋 �
 - pixlol `.lx-*`(lolalytics 그대로) · `.detail-table` 48px 고정 행 · `custom_values.js` 각주 인라인
 - maple 길드 검색 바 (월드 셀렉트 구조 유지, 높이만 `--dogu-ctl-lg`)
 - 공통 파일의 히어로 검색창(52/42) · 검색 버튼 알약 — 5절 그대로
+- loa 표 머리 `th` 패딩 `10px 12px 10px 0` / `10px 0` — 카드 패딩 18 이 좌우 여백을 대신하는 구조 (2026-09-11 등록)
+- tft·pixlol 아이콘 버튼(필터 아이콘) 34×34 — 세그 탭 28 알약 규칙의 예외 (아이콘 22px 가 28 안에 안 들어감)
 
 ### 14-7. 적용 기록
 
 - **2026-09-10 적용 완료 — 6곳 전부** (pixlol · er · maple · loa · tft 1~5편, 랜딩 6편). 사이트별 변경 목록은 각 저장소 커밋 메시지, 근거는 `dogu_template/audit/unify-plan-20260910.md`.
 - 랜딩(`dogu_main`)은 `build.ps1` 이 이 폴더의 `dogu-ui.css` 를 `__DOGU_UI_CSS__` 자리에 **빌드 시 인라인**한다 (sync 대상 아님). 헤더 1단(`.dogu-gnb-utility` + `.dogu-brand`)과 푸터(`.dogu-footer`) 마크업을 손으로 쓰고, 색 토큰은 `:root` 에서 랜딩 팔레트로 되돌린다. 공통 CSS 를 고치면 랜딩도 다시 빌드·배포해야 한다.
 - 검증은 데스크톱 1280 헤드리스 캡처 + 폰은 CDP `Emulation.setDeviceMetricsOverride(390, mobile)` 로 `scrollWidth == innerWidth` 확인 (`--window-size=390` 캡처는 창 최소폭 때문에 가짜 넘침이 찍힌다).
+
+
+---
+
+## 15. 공통 컴포넌트 — 표 스크롤 힌트 · 빈 상태 · 스켈레톤 (2026-09-11, 취약점 분석 P-2·P-3)
+
+5사이트가 제각각 만들던 셋을 공통으로 올렸다. 근거는 `dogu_template/audit/design-weakness-20260910.md` §1 P-2·P-3.
+
+### 15-1. 표 스크롤 힌트 (폰에서 표가 잘리는데 안내가 없던 것)
+
+```html
+<p class="dogu-scroll-hint">옆으로 밀어 더 볼 수 있습니다</p>   <!-- 폰(≤768)에서만 보인다 -->
+<div class="dogu-scroll-wrap" id="rank-wrap">
+  <table class="rank-table">…</table>
+</div>
+<script>DoguUI.scrollHint('#rank-wrap');</script>   <!-- 표를 그린 뒤 한 번. 오른쪽에 더 있으면 36px 페이드(.has-more) -->
+```
+
+- 래퍼는 `overflow-x: auto` 만 담당한다. 표의 `min-width` 는 사이트 몫.
+- `scrollHint` 는 스크롤·리사이즈를 보고 `has-more` 를 붙였다 뗀다. 표를 다시 그린 뒤 다시 불러도 리스너가 중복되지 않는다.
+- 사이트에 이미 있던 `.scroll-hint`(maple)·"옆으로 밀어 보세요"(loa) 는 이 클래스로 바꾼다.
+
+### 15-2. 빈 상태 · 오류
+
+```js
+box.innerHTML = DoguUI.emptyHtml({ icon: '📭', title: '아직 표본이 없습니다', body: '수집이 쌓이면 채워집니다.', retry: { text: '다시 시도', id: 'stats-retry' } });
+document.getElementById('stats-retry').addEventListener('click', load);
+```
+
+- 점선 테두리 상자 · 13px · 가운데. **제목·필터 줄은 남기고 표 자리에만** 넣는다 (pixlol 통계처럼 컨트롤까지 갈아끼우지 말 것).
+- `link: { text, href, external }` 을 주면 본문 아래 링크 한 줄(「← 통계로」「원문 보기」). 내부 링크는 `linkAttr` 옵션(`data-link`)을 같이 넘긴다. 상자는 `width: 100%` 라 flex·grid 자식으로 넣어도 전폭.
+- `retry` 는 옵션. 문구는 "무엇이 올 자리 + 지금 할 수 있는 것" (loa 입찰 "가격을 입력하면 …" 이 좋은 예).
+
+### 15-3. 스켈레톤
+
+```js
+box.innerHTML = DoguUI.skelRowsHtml(10);   // 첫 페이지 행 수만큼 — 표가 도착해도 높이가 크게 안 뛴다
+```
+
+- `prefers-reduced-motion` 이면 깜빡임 없음. 한 줄짜리 "불러오는 중…" 텍스트 대신 쓴다.
+
+### 15-4. 같이 바뀐 공통 값 (2026-09-11)
+
+- `--dogu-text-3` #7288ac → **#8ea3c6** (남색 위 5.2:1. 랜딩 푸터 3.87 이었다)
+- `.dogu-dropdown-sub` 굵기 500 → 400 · `.dogu-doc-title` 20 → 24 + 자간 토큰 · `.dogu-footer-links a` 색 리터럴 → `--dogu-text-2`

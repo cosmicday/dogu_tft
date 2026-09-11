@@ -48,7 +48,26 @@
         <!-- ==================================================
              홈 — 히어로는 위(main 밖). 이 컨테이너는 홈 본문 자리
              ================================================== -->
-        <section class="page-container page-home" id="page-home"></section>
+        <section class="page-container page-home" id="page-home">
+            <!-- S-1 (2026-09-11): 검색창 아래 위젯 2개 — 랭킹 TOP 10 · 유닛 통계 TOP 5.
+                 기존 /api/ranking · /api/stats 와 랭킹/통계 페이지의 행 렌더를 그대로 재사용한다 (app.js loadHome) -->
+            <div class="home-grid">
+                <section class="panel home-panel">
+                    <div class="panel-head">
+                        <h2 class="panel-title">랭킹 TOP 10</h2>
+                        <a class="panel-more" href="%BASE%/ranking" data-link>더 보기</a>
+                    </div>
+                    <div class="panel-body" id="home-ranking"></div>
+                </section>
+                <section class="panel home-panel">
+                    <div class="panel-head">
+                        <h2 class="panel-title">유닛 통계 TOP 5</h2>
+                        <a class="panel-more" href="%BASE%/stats" data-link>더 보기</a>
+                    </div>
+                    <div class="panel-body" id="home-stats"></div>
+                </section>
+            </div>
+        </section>
 
         <!-- ==================================================
              소환사 전적 페이지
@@ -62,7 +81,7 @@
              ================================================== -->
         <section class="page-container" id="page-ranking">
             <h2 class="page-title">랭킹</h2>
-            <p class="page-desc" id="ranking-updated">KR 서버 랭크 TFT 상위 랭커 (10분마다 갱신)</p>
+            <p class="page-desc">KR 서버 랭크 TFT 상위 랭커 <span id="ranking-meta">· 10분마다 갱신</span></p>   <!-- M-7·m-6: 문장은 고정, 시각만 span 에 -->
             <div id="ranking-body"></div>
         </section>
 
@@ -71,7 +90,7 @@
              ================================================== -->
         <section class="page-container" id="page-stats">
             <h2 class="page-title">통계</h2>
-            <p class="page-desc" id="stats-desc">상위 랭커의 랭크 게임을 수집해 집계합니다.</p>
+            <p class="page-desc">상위 랭커의 랭크 게임을 수집해 집계합니다. <span id="stats-meta"></span></p>   <!-- M-7·m-6: 문장은 고정, 세트·표본·시각만 span 에 -->
             <div id="stats-body"></div>
         </section>
 
@@ -79,7 +98,9 @@
              약관 / 개인정보 / 404
              ================================================== -->
         <section class="page-container page-doc" id="page-terms">
-            <h2 class="page-title">이용약관</h2>
+            <!-- M-8: 본문은 공통 문서 패널(.dogu-doc-panel 800 가운데 + .dogu-doc-title 24) — DOGU_UI.md 15절 -->
+            <div class="dogu-doc-panel">
+            <h2 class="dogu-doc-title">이용약관</h2>
 
             <h3>제1조 (목적)</h3>
             <p>본 약관은 <b>%SITE_NAME%</b>(이하 '본 사이트')가 제공하는 서비스의 이용 조건 및 제반 사항을 규정함을 목적으로 합니다.</p>
@@ -95,10 +116,12 @@
 
             <h3>제5조 (면책 조항)</h3>
             <p>본 사이트가 제공하는 데이터는 Riot Games API를 통해 자동 처리되므로 완벽한 정확성을 보증하지 않으며, 이를 근거로 한 이용자의 판단에 대한 책임은 본인에게 있습니다.</p>
+            </div>
         </section>
 
         <section class="page-container page-doc" id="page-privacy">
-            <h2 class="page-title">개인정보 처리방침</h2>
+            <div class="dogu-doc-panel">
+            <h2 class="dogu-doc-title">개인정보 처리방침</h2>
             <p><b>%SITE_NAME%</b>(이하 '본 사이트')는 이용자의 개인정보를 중요시하며 안전하게 보호하기 위해 최선을 다하고 있습니다.</p>
 
             <h3>1. 수집하는 개인정보 항목</h3>
@@ -112,6 +135,7 @@
 
             <h3>4. 문의</h3>
             <p>건의사항, 버그 리포트 또는 개인정보 처리방침 관련 문의는 <b>%CONTACT_EMAIL%</b> 로 연락해 주시기 바랍니다.</p>
+            </div>
         </section>
 
         <!-- 404 본문은 DoguUI.notFoundHtml() 이 채운다 (app.js) -->

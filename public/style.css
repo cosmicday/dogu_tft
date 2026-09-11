@@ -26,11 +26,12 @@
     --border: rgba(255, 255, 255, 0.10);
     --text: #eceef5;
     --text-dim: rgba(255, 255, 255, 0.62);
-    --text-faint: rgba(255, 255, 255, 0.36);
+    --text-faint: rgba(255, 255, 255, 0.50);   /* 0.36 → 0.50 (2026-09-11 S-3): surface 위 3.3:1 → 5.0:1 */
     /* 사이트 내부 컴포넌트(필터·버튼·링크 hover)도 공통 액센트를 따른다 → 한 곳에서만 바꾼다 */
     --accent: var(--dogu-accent);
     --accent-strong: var(--dogu-accent-dark);
     --danger: #f87171;
+    --ink-on-accent: #1a1200;              /* 액센트 채움 위 글자 — 흰 글자는 #c7742e 위 3.5:1 이라 어두운 잉크로 (M-9, 2026-09-11) */
     --radius: var(--dogu-r-card);          /* 카드 모서리 — 공통 토큰(10px)을 가리킨다 (14-4) */
     --max-width: var(--dogu-wrap);         /* 본문 폭 = 헤더 폭 1120 (14-5) */
 
@@ -99,7 +100,7 @@ main {
     display: none;
     padding: var(--dogu-page-top) 0 var(--dogu-page-bottom);
     min-height: 60vh;
-    animation: fadeIn 0.35s ease;
+    animation: fadeIn 0.2s ease;   /* 14-3: opacity/transform 0.2s */
 }
 
 .page-title {
@@ -115,15 +116,17 @@ main {
     margin-bottom: 20px;
 }
 
+/* 약관·개인정보 — 본문은 공통 .dogu-doc-panel 골격(800 가운데) 안 (M-8, DOGU_UI.md 15절) */
 .page-doc h3 {
     color: var(--accent);
     font-size: 15px;
     font-weight: 800;
-    margin: 26px 0 8px;
+    margin: 20px 0 8px;
 }
 
 .page-doc p {
     color: var(--text-dim);
+    font-size: 13px;   /* 계단 밖 UA 16 → 13 (M-8) */
     line-height: 1.85;
     margin-bottom: 12px;
 }
@@ -135,13 +138,7 @@ main {
 
 .text-link:hover { text-decoration: underline; }
 
-.loading, .empty {
-    grid-column: 1 / -1;
-    text-align: center;
-    padding: 70px 0;
-    color: var(--text-faint);
-    font-size: 14px;
-}
+/* (.loading .empty — 2026-09-11 공통 DoguUI.skelRowsHtml / emptyHtml 로 갈아탔다. .skel-box 는 16절) */
 
 /* =========================================
    4. 홈 — 히어로·검색창·드롭다운은 dogu-ui.css (DoguUI.mountHero 가 그린다)
@@ -177,7 +174,7 @@ main {
 .detail-head {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 12px;
     flex-wrap: wrap;
     margin-bottom: 6px;
 }
@@ -193,6 +190,7 @@ main {
     font-weight: 700;
     line-height: 1;
     padding: 0 14px;
+    transition: background var(--dogu-ease), color var(--dogu-ease), border-color var(--dogu-ease);
 }
 
 .fav-btn.on { color: #facc15; border-color: rgba(250, 204, 21, 0.4); }
@@ -210,7 +208,7 @@ main {
     border-radius: var(--dogu-r-card);
     color: var(--text);
     font-size: 14px;
-    padding: 13px 22px;
+    padding: var(--dogu-card-pad);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
     opacity: 0;
     pointer-events: none;
@@ -293,9 +291,6 @@ main {
     margin-bottom: 16px;
 }
 
-.error-box { text-align: center; padding: 70px 0; }
-.error-msg { color: var(--text-dim); font-size: 15px; margin-bottom: 18px; }
-
 .profile-card {
     display: flex;
     align-items: center;
@@ -304,7 +299,7 @@ main {
     border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: var(--dogu-card-pad);
-    margin-bottom: 14px;
+    margin-bottom: 16px;
 }
 
 .profile-icon {
@@ -347,14 +342,14 @@ main {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 12px;
-    margin-bottom: 14px;
+    margin-bottom: 16px;
 }
 
 .league-card {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 14px 18px;
+    padding: var(--dogu-card-pad);
 }
 
 .league-label {
@@ -370,13 +365,13 @@ main {
 
 .stats-strip {
     display: flex;
-    gap: 26px;
+    gap: 24px;
     flex-wrap: wrap;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 13px 20px;
-    margin-bottom: 18px;
+    padding: var(--dogu-card-pad);
+    margin-bottom: 16px;
 }
 
 .stat-item { display: flex; align-items: baseline; gap: 8px; }
@@ -411,17 +406,20 @@ main {
 .match-row {
     display: flex;
     align-items: center;
-    gap: 18px;
+    gap: 16px;
     background: var(--surface);
     border: 1px solid var(--border);
     border-left: 4px solid var(--text-faint);
     border-radius: var(--radius);
-    padding: 14px 18px;
+    padding: var(--dogu-card-pad);
     cursor: pointer;
     transition: border-color var(--dogu-ease), background var(--dogu-ease);
 }
 
-.match-row:hover { background: var(--surface-2); }
+@media (hover: hover) {
+    .match-row:hover { background: var(--surface-2); }
+}
+.match-row:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .match-row.pl-1 { border-left-color: #f4c874; }
 .match-row.pl-top4 { border-left-color: #5b9dd9; }
 .match-row.pl-bottom { border-left-color: rgba(255, 255, 255, 0.18); }
@@ -443,7 +441,7 @@ main {
     align-items: center;
     gap: 10px;
     flex-wrap: wrap;
-    margin-bottom: 7px;
+    margin-bottom: 8px;
 }
 
 .augment {
@@ -498,7 +496,7 @@ main {
 
 .match-units {
     display: flex;
-    gap: 5px;
+    gap: 4px;
     flex-wrap: wrap;
 }
 
@@ -588,7 +586,7 @@ main {
     padding: 6px 10px;
 }
 
-.detail-scroll { overflow-x: auto; }
+/* (.detail-scroll — 2026-09-11 공통 .dogu-scroll-wrap + DoguUI.scrollHint 로 갈아탔다) */
 
 .detail-table, .rank-table {
     width: 100%;
@@ -632,6 +630,8 @@ main {
 .detail-name-unknown { color: var(--text-faint); }
 
 .detail-num { color: var(--text-dim); font-variant-numeric: tabular-nums; }
+/* 숫자 열은 오른쪽 정렬 (M-2, 14-4) — th 에는 .num 을 준다 */
+.detail-table th.num, .rank-table th.num, .detail-num { text-align: right; }
 
 .detail-table .unit { width: 30px; }
 .detail-table .unit-icon { width: 30px; height: 30px; border-radius: var(--dogu-r-badge); border-width: 1.5px; }
@@ -640,7 +640,7 @@ main {
 
 .more-btn {
     display: block;
-    margin: 18px auto 0;
+    margin: 16px auto 0;
     height: var(--dogu-ctl-md);
     background: var(--surface-2);
     border: 1px solid var(--border);
@@ -651,10 +651,9 @@ main {
     font-weight: 700;
     line-height: 1;
     padding: 0 20px;
-    transition: border-color var(--dogu-ease);
+    transition: background var(--dogu-ease), color var(--dogu-ease), border-color var(--dogu-ease);
 }
 
-.more-btn:hover { border-color: var(--accent); }
 .more-btn:disabled { opacity: 0.5; cursor: default; }
 
 /* =========================================
@@ -679,12 +678,13 @@ main {
     line-height: 1;
     padding: 0 12px;
     white-space: nowrap;
+    transition: background var(--dogu-ease), color var(--dogu-ease), border-color var(--dogu-ease);
 }
 
 .rank-filter.active {
     background: var(--accent-strong);
     border-color: var(--accent-strong);
-    color: #fff;
+    color: var(--ink-on-accent);   /* 흰 글자 3.5:1 → 어두운 잉크 (M-9) */
 }
 
 .rank-table {
@@ -699,14 +699,14 @@ main {
 .rank-name:hover { color: var(--accent); }
 .rank-name-pending { color: var(--text-faint); font-style: italic; }
 
-.tier-badge { font-size: 12px; font-weight: 800; }
+.tier-text { font-size: 12px; font-weight: 700; }   /* 배지 규격(채움)이 아니라 색글자 — 이름을 사실대로 (m-4). 굵기 800 → 700 */
 
 .rank-pager {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 14px;
-    margin-top: 18px;
+    gap: 8px;
+    margin-top: 16px;
 }
 
 .pager-btn {
@@ -719,11 +719,14 @@ main {
     font-size: 13px;
     font-weight: 700;
     line-height: 1;
-    padding: 0 14px;
+    padding: 0 12px;
+    min-width: var(--dogu-ctl-md);
+    font-variant-numeric: tabular-nums;
+    transition: background var(--dogu-ease), color var(--dogu-ease), border-color var(--dogu-ease);
 }
 
 .pager-btn:disabled { opacity: 0.35; cursor: default; }
-.pager-info { color: var(--text-dim); font-size: 13px; }
+.pager-btn.active { background: var(--accent-strong); border-color: var(--accent-strong); color: var(--ink-on-accent); }
 
 /* =========================================
    13. TFT — 모바일
@@ -752,8 +755,31 @@ main {
         align-items: baseline;
     }
 
-    .stats-strip { gap: 14px; padding: 12px 14px; }
+    .stats-strip { gap: 12px; padding: 12px 14px; }
     .rank-filter { height: 34px; }   /* 칩은 폰에서 34 (14-3) */
+    .pager-btn { height: 40px; min-width: 40px; }   /* 터치 표적 (m-7) */
+    .rank-find { font-size: 16px; }   /* 폰 입력 16 (13절 예외) */
+
+    /* 표 — 폰에서 순방/게임 · 1위율 열은 숨기고, # · 이름 열을 sticky 로 붙여 옆으로 밀어도 누구 행인지 보인다 (S-2) */
+    .rank-table .col-games, .rank-table .col-win { display: none; }
+    .rank-table { min-width: 520px; }
+    .rank-table.compact { min-width: 400px; }
+    .rank-table th:first-child, .rank-table td:first-child,
+    .rank-table th:nth-child(2), .rank-table td:nth-child(2) {
+        position: sticky;
+        z-index: 1;
+        background: var(--surface);
+    }
+    .rank-table th:first-child, .rank-table td:first-child { left: 0; width: 40px; min-width: 40px; max-width: 40px; padding-left: 10px; padding-right: 6px; }
+    .rank-table th:nth-child(2), .rank-table td:nth-child(2) { left: 40px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
+    .rank-table th:nth-child(2)::after, .rank-table td:nth-child(2)::after {   /* sticky 이름 열 오른쪽 경계 */
+        content: "";
+        position: absolute;
+        top: 0; right: 0; bottom: 0;
+        width: 1px;
+        background: var(--border);
+    }
+    .stats-items-name { display: inline; }   /* 폰: 첫 아이템 이름을 아이콘 옆에 글자로 (M-4, 툴팁은 터치 불가) */
     .unit { width: 38px; }
     .unit-icon { width: 38px; height: 38px; }
 }
@@ -767,27 +793,27 @@ main {
     background: var(--accent-strong);
     border: 0;
     border-radius: var(--dogu-r-ctl);
-    color: #fff;
+    color: var(--ink-on-accent);   /* 흰 글자 3.5:1 → 어두운 잉크 (M-9 와 같은 이유) */
     cursor: pointer;
     font-size: 14px;
     font-weight: 700;
     line-height: 1;
     padding: 0 20px;
-    transition: background var(--dogu-ease);
+    transition: background var(--dogu-ease), color var(--dogu-ease), border-color var(--dogu-ease);
     flex: none;
 }
 
-.refresh-btn:hover { background: var(--accent); }
 .refresh-btn:disabled { opacity: 0.55; cursor: default; }
 
-.match-filters { margin: 0 0 14px; }
+.match-filters { margin: 0 0 12px; }
 
 .pg-card {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 13px 18px 8px;
-    margin-bottom: 14px;
+    padding: var(--dogu-card-pad);
+    padding-bottom: 8px;
+    margin-bottom: 16px;
 }
 
 .pg-title {
@@ -825,7 +851,7 @@ main {
     font-size: 11px;   /* 미세 라벨(SVG 축) — 계단 1단 */
 }
 
-.pg-dot { stroke: var(--bg); stroke-width: 1.5; }
+.pg-dot { stroke: var(--dogu-bg); stroke-width: 1.5; }   /* --bg 는 정의된 적 없음 (m-3) */
 .pg-dot-1 { fill: #f4c874; }
 .pg-dot-top4 { fill: #6fb6f9; }
 .pg-dot-bottom { fill: #5a6272; }
@@ -833,16 +859,10 @@ main {
 /* =========================================
    15. TFT — 통계 페이지
    ========================================= */
-.stats-sort {
-    margin-left: auto;
-    display: inline-flex;
-    gap: 8px;
-}
-
 .stats-name {
     display: flex;
     align-items: center;
-    gap: 9px;
+    gap: 8px;
     font-weight: 700;
 }
 
@@ -875,8 +895,10 @@ main {
     border-radius: var(--dogu-r-badge);
 }
 
-.stats-items { display: flex; gap: 3px; }
-.stats-items .unit-item { width: 22px; height: 22px; }
+.stats-items { display: flex; align-items: center; gap: 4px; }
+.stats-items .unit-item { width: 28px; height: 28px; }   /* 22 → 28 (M-4) */
+.stats-items-name { display: none; font-size: 12px; color: var(--text-dim); margin-left: 2px; }
+.stats-none { color: var(--text-faint); }
 
 .stats-avg { font-weight: 800; color: var(--text); }
 
@@ -884,4 +906,172 @@ main {
     margin-top: 12px;
     font-size: 12px;
     color: var(--text-faint);
+}
+
+/* =========================================
+   16. 홈 위젯 · 랭킹 2단 · 탭 · 컨트롤 상태 (2026-09-11 취약점 수정)
+   ========================================= */
+/* 홈 — 패널 + 머리(제목 · 더 보기) 골격은 er 홈과 같은 문법 (S-1) */
+.home-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    gap: var(--dogu-section-gap);
+    margin-top: 4px;
+}
+
+.panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    min-width: 0;
+}
+
+.panel-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--border);
+}
+
+.panel-title { font-size: 15px; font-weight: 800; }
+
+.panel-more {
+    margin-left: auto;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-dim);
+    transition: color var(--dogu-ease);
+}
+
+.panel-pad { padding: var(--dogu-card-pad); }
+.panel-body > p:first-child { margin: 0; padding: 8px 18px 0; }   /* 위젯 안 스크롤 힌트(공통 p) — 패널 안쪽 여백에 맞춘다 */
+.panel .rank-table { border: 0; border-radius: 0; }
+
+/* 스켈레톤 자리 — 공통 DoguUI.skelRowsHtml 을 표 상자 안에 (M-7) */
+.skel-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 4px 16px;
+}
+.panel .skel-box { border: 0; border-radius: 0; }
+
+/* 랭킹 — 표 + 오른쪽 aside(닉네임 찾기 · 커트라인) 2단 (M-1) */
+.rank-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 280px;
+    gap: var(--dogu-section-gap);
+    align-items: start;
+}
+
+.rank-aside { display: flex; flex-direction: column; gap: var(--dogu-section-gap); min-width: 0; }
+
+.rank-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: var(--dogu-card-pad);
+}
+
+.rank-card-title { display: block; font-size: 15px; font-weight: 800; margin-bottom: 10px; }
+
+.rank-find {
+    width: 100%;
+    height: var(--dogu-ctl-md);
+    padding: 0 12px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--dogu-r-ctl);
+    color: var(--text);
+    font-size: 13px;
+    transition: border-color var(--dogu-ease);
+}
+.rank-find::placeholder { color: var(--text-faint); }
+.rank-find-result { margin-top: 8px; min-height: 18px; font-size: 12px; color: var(--text-dim); }
+
+.cut-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+.cut-row:last-of-type { border-bottom: 0; }
+.cut-lp { font-size: 17px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.cut-note { margin-top: 8px; font-size: 12px; color: var(--text-faint); }
+
+.rank-row-hit td { background: rgba(234, 183, 101, 0.07); }   /* 닉네임 찾기로 잡힌 행 — .detail-row-me 와 같은 톤 */
+
+/* 랭킹 열 폭 — 티어 120 · LP 110 · 순방률 90 · 순방/게임 120, 남는 폭은 소환사 (M-3) */
+.rank-table .col-no { width: 52px; }
+.rank-table .col-tier { width: 120px; }
+.rank-table .col-lp { width: 110px; }
+.rank-table .col-top4 { width: 90px; }
+.rank-table .col-games { width: 120px; }
+
+/* 통계 — 탭은 밑줄형(--dogu-ctl-tab 36), 정렬은 표 머리 클릭 ▲▼ (M-5) */
+.stats-tabs {
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+}
+
+.stats-tab {
+    height: var(--dogu-ctl-tab);
+    padding: 0 14px;
+    margin-bottom: -1px;
+    background: none;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1;
+    transition: color var(--dogu-ease), border-color var(--dogu-ease);
+}
+.stats-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+.th-sort {
+    background: none;
+    border: 0;
+    padding: 0;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color var(--dogu-ease);
+}
+.rank-table th.sorted .th-sort { color: var(--accent); }   /* 액센트는 정렬된 열에만 */
+.sort-glyph { display: inline-block; width: 10px; margin-left: 2px; font-size: 9px; }   /* 글리프 (13절) */
+
+/* 컨트롤 상태 — hover 는 마우스 기기에서만, 키보드 포커스 링, 눌림 (M-6, 14-3) */
+.rank-filter:focus-visible, .pager-btn:focus-visible, .fav-btn:focus-visible, .more-btn:focus-visible,
+.refresh-btn:focus-visible, .stats-tab:focus-visible, .th-sort:focus-visible, .panel-more:focus-visible,
+.rank-find:focus-visible, .rank-name:focus-visible, .detail-name:focus-visible, .suggest-row:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+.rank-find:focus-visible { outline-offset: 0; }
+
+@media (hover: hover) {
+    .rank-filter:hover, .fav-btn:hover, .more-btn:hover:not(:disabled), .pager-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--text); }
+    .rank-filter.active:hover, .pager-btn.active:hover { color: var(--ink-on-accent); }
+    .refresh-btn:hover:not(:disabled) { background: var(--accent); }
+    .stats-tab:hover { color: var(--text); }
+    .th-sort:hover { color: var(--text); }
+    .panel-more:hover { color: var(--accent); }
+    .rank-find:hover { border-color: var(--accent); }
+}
+
+.rank-filter:active, .fav-btn:active, .more-btn:active:not(:disabled), .pager-btn:active:not(:disabled), .refresh-btn:active:not(:disabled) { transform: translateY(1px); }
+
+@media (max-width: 900px) {
+    .home-grid { grid-template-columns: minmax(0, 1fr); }      /* 1fr 은 minmax(auto,1fr) 이라 표 min-width 가 열을 밀어 뷰포트가 536 으로 늘었다 */
+    .rank-layout { grid-template-columns: minmax(0, 1fr); }
+    .rank-aside { order: -1; }   /* 폰·태블릿: 닉네임 찾기가 표 위 */
 }
