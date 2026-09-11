@@ -82,6 +82,18 @@ async function connectMongo() {
             dbName: process.env.MONGO_DB_NAME || 'dogu_tft'
         });
         console.log(`[System] MongoDB 연결 성공 (db: ${process.env.MONGO_DB_NAME || 'dogu_tft'})`);
+        // ★★ 스키마의 `expires: '30d'` 는 **인덱스가 실제로 있어야** 돈다 (2026-09-11 실측: 한 달 동안 TTL 인덱스가
+        //   없어서 matchcaches 가 한 건도 안 지워졌다 — pixlol 이 8/16 에 겪은 함정과 같다). 부팅 때 직접 확인해 만든다.
+        try {
+            const col = mongoose.connection.db.collection('matchcaches');
+            const has = (await col.indexes().catch(() => [])).some(i => i.key && i.key.createdAt === 1 && i.expireAfterSeconds != null);
+            if (!has) {
+                await col.createIndex({ createdAt: 1 }, { expireAfterSeconds: 30 * 86400 });
+                console.log('[System] matchcaches TTL 인덱스(30일) 생성');
+            }
+        } catch (e) {
+            console.warn('[System] matchcaches TTL 인덱스 확인 실패:', e.message);
+        }
         return true;
     } catch (err) {
         // pixlol은 연결 실패 시 프로세스를 내렸지만, 여기서는 DB가 선택 사항이라

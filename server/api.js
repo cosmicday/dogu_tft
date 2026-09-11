@@ -738,9 +738,16 @@ async function startRiotJobs() {
 
     // 메타 통계: 수집은 5분 주기(사이클당 최대 6콜), 집계는 30분 주기
     refreshMetaStats();
-    setInterval(crawlRankedMatches, 5 * 60 * 1000);
     setInterval(refreshMetaStats, 30 * 60 * 1000);
-    setTimeout(crawlRankedMatches, 30 * 1000);   // 첫 수집은 부팅 30초 뒤
+    // ★★ 랭커 매치 수집은 **기본 꺼짐**이다 (2026-09-11 사용자 결정). 켜려면 `TFT_CRAWL=1`.
+    //   pixlol 과 같은 Atlas M0(512MB) 를 나눠 쓰는데, 이 수집이 30일 TTL 인덱스 없이 한 달 동안
+    //   2,300판 · 48MB 를 쌓아 클러스터 전체가 잠기는 데 한몫했다. 그날 데이터도 통째로 비웠다.
+    if (process.env.TFT_CRAWL === '1') {
+        setInterval(crawlRankedMatches, 5 * 60 * 1000);
+        setTimeout(crawlRankedMatches, 30 * 1000);   // 첫 수집은 부팅 30초 뒤
+    } else {
+        console.log('[Task] 랭커 매치 수집은 꺼져 있다 (TFT_CRAWL=1 로 켠다)');
+    }
 }
 
 module.exports = { router, startRiotJobs };
