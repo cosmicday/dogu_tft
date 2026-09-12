@@ -373,7 +373,7 @@ git -C dogu_template status --short dogu-ui    # 원본 작업본이 미커밋 �
 
 ## 14. 디자인 토큰 · 사이트 공통 규격 (2026-09-10 확정 — 근거·실측은 `dogu_template/audit/unify-plan-20260910.md`)
 
-색은 사이트 것을 그대로 쓴다. **치수·모양·굵기·모션**만 5사이트 + 랜딩이 같은 값을 쓴다. 값은 `dogu-ui.css` `:root` 의 토큰(`--dogu-ctl-*` `--dogu-r-*` `--dogu-ease` `--dogu-card-pad` `--dogu-page-*` `--dogu-section-gap` `--dogu-title-ls`)에 있고, **사이트 CSS 는 이 절의 토큰만 `--dogu-*` 로 직접 참조한다** (그 외 `--dogu-*` 는 여전히 참조 금지 — 2절·8절).
+색은 사이트 것을 그대로 쓴다. **치수·모양·굵기·모션**만 5사이트 + 랜딩이 같은 값을 쓴다. 값은 `dogu-ui.css` `:root` 의 토큰(`--dogu-ctl-*` `--dogu-r-*` `--dogu-ease` `--dogu-card-pad` `--dogu-page-*` `--dogu-section-gap` `--dogu-title-ls` `--dogu-gnb-h`)에 있고, **사이트 CSS 는 이 절의 토큰만 `--dogu-*` 로 직접 참조한다** (그 외 `--dogu-*` 는 여전히 참조 금지 — 2절·8절).
 
 ### 14-1. 글꼴
 
@@ -436,6 +436,7 @@ git -C dogu_template status --short dogu-ui    # 원본 작업본이 미커밋 �
 - 페이지 상단 `padding-top: var(--dogu-page-top)` 24 · 하단 `var(--dogu-page-bottom)` 60.
 - 카드 사이 `var(--dogu-section-gap)` 16. 그리드 gap 은 안쪽 8 · 카드 그리드 12.
 - 글자 미디어 규칙 768 (13절). 레이아웃 중단점은 사이트 자유.
+- **sticky 오프셋은 `--dogu-gnb-h` 로.** 공통 헤더가 실제로 먹는 높이 — 데스크 **109**(62 + 46 + 테두리 1) · 폰 **53**(2단이 접혀 52 + 1, 8절이 덮는다). sticky 인 사이트 요소는 `top: calc(var(--dogu-gnb-h) + 16px)` 로 쓴다. 숫자를 사이트마다 박으면 헤더 높이를 바꿀 때 조용히 어긋난다 (2026-09-12 er L-4 에서 나온 것). 랜딩은 1단 헤더(63)라 이 토큰을 쓰지 않는다.
 
 ### 14-6. 예외 (이름 붙은 자리)
 
@@ -444,6 +445,7 @@ git -C dogu_template status --short dogu-ui    # 원본 작업본이 미커밋 �
 - 공통 파일의 히어로 검색창(52/42) · 검색 버튼 알약 — 5절 그대로
 - loa 표 머리 `th` 패딩 `10px 12px 10px 0` / `10px 0` — 카드 패딩 18 이 좌우 여백을 대신하는 구조 (2026-09-11 등록)
 - tft·pixlol 아이콘 버튼(필터 아이콘) 34×34 — 세그 탭 28 알약 규칙의 예외 (아이콘 22px 가 28 안에 안 들어감)
+- **「값을 띄우는 `:hover`」는 `@media (hover: hover)` 강제 대상 밖** (2026-09-12 등록) — 툴팁·그래프 점·커트라인 점·각주처럼 **hover 가 정보를 여는** 자리는 가드로 감싸면 폰에서 그 값을 볼 길이 아예 없어진다. 가드는 「hover 가 장식(lift·글로우·색)인 자리」에만 씌운다. 실제로 pixlol 9곳(공용 툴팁·그래프 점·커트라인 점·각주) · er `.cut-pt` · maple 1곳이 같은 이유로 남았다. 폰 전용 탭 토글로 바꾸는 것은 기능 추가라 이번 범위 밖.
 
 ### 14-7. 적용 기록
 
