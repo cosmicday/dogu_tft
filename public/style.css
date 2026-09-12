@@ -943,6 +943,7 @@ main {
 .home-grid {
     display: grid;
     grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    align-items: start;   /* 기본 stretch 면 짧은 오른쪽 패널(유닛 TOP 5)이 왼쪽 높이까지 늘어나 아래가 ~180px 빈다 (결정 후속) */
     gap: var(--dogu-section-gap);
     margin-top: 4px;
 }

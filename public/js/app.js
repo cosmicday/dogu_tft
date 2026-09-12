@@ -179,6 +179,13 @@
         return '<div class="league-card"><div class="league-label">' + esc(label) + '</div>' + body + '</div>';
     }
 
+    /* 딜량 표시 여부 — 라이엇이 Set 18(Unreal 이식) 부터 total_damage_to_players 를 전 참가자 0 으로 주고 있다.
+       하드코딩으로 지우지 않고 "그 경기 참가자 전원이 0 이면 숨긴다" 는 조건으로 둔다.
+       라이엇이 값을 다시 채우기 시작하면 코드를 안 고쳐도 저절로 되살아난다 (결정 후속). */
+    function hasDamage(participants) {
+        return (participants || []).some(function (p) { return Number(p.damage) > 0; });
+    }
+
     function matchRowHtml(entry) {
         var me = entry.me;
         var plClass = tft.placementClass(me.placement);
@@ -202,7 +209,7 @@
             '</div>' +
             '<div class="match-right">' +
             '<div class="match-lv">Lv ' + me.level + '</div>' +
-            '<div class="match-dmg" title="플레이어에게 가한 피해">🗡 ' + Number(me.damage).toLocaleString() + '</div>' +
+            (hasDamage(entry.participants) ? '<div class="match-dmg" title="플레이어에게 가한 피해">🗡 ' + Number(me.damage).toLocaleString() + '</div>' : '') +
             '<div class="expand-caret">▾</div>' +
             '</div>' +
             '</div>' +
@@ -230,6 +237,7 @@
     }
 
     function matchDetailHtml(entry) {
+        var showDmg = hasDamage(entry.participants);
         var rows = entry.participants.map(function (p) {
             var nameCell = p.name
                 ? '<a class="detail-name" href="' + esc(App.url('/summoner/' + encodeURIComponent(p.name))) + '" data-link>' + esc(p.name) + '</a>'
@@ -240,7 +248,7 @@
                 '<td>' + nameCell + '</td>' +
                 '<td class="detail-num">Lv ' + p.level + '</td>' +
                 '<td class="detail-num">' + esc(tft.fmtRound(p.lastRound)) + '</td>' +
-                '<td class="detail-num">' + Number(p.damage).toLocaleString() + '</td>' +
+                (showDmg ? '<td class="detail-num">' + Number(p.damage).toLocaleString() + '</td>' : '') +
                 '<td class="detail-units"><div class="match-units">' + p.units.map(tft.unitHtml).join('') + '</div></td>' +
                 '</tr>';
         }).join('');
@@ -249,7 +257,8 @@
         return detailItemsHtml(entry.me) +
             '<p class="dogu-scroll-hint">옆으로 밀어 더 볼 수 있습니다</p>' +
             '<div class="dogu-scroll-wrap"><table class="detail-table">' +
-            '<thead><tr><th>순위</th><th>소환사</th><th class="num">레벨</th><th class="num">라운드</th><th class="num">딜량</th><th>덱</th></tr></thead>' +
+            '<thead><tr><th>순위</th><th>소환사</th><th class="num">레벨</th><th class="num">라운드</th>' +
+            (showDmg ? '<th class="num">딜량</th>' : '') + '<th>덱</th></tr></thead>' +
             '<tbody>' + rows + '</tbody></table></div>';
     }
 
