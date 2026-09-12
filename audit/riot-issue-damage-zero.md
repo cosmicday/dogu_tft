@@ -121,6 +121,10 @@ eliminated 0 players.
 - #1185 — Set 18 live, `game_version` placeholder `TFT Unreal Version ?.?.?.?` and missing
   augments/partner groups. We see the same `game_version` placeholder on all 200 matches,
   which suggests the same Set 18 Unreal pipeline.
+- #253 — the same two fields (`total_damage_to_players`, `players_eliminated`) returned 0 back in
+  2023, was closed as `closed: is working`. So this failure mode has occurred before around a set
+  transition and was fixed then; this looks like a recurrence on the Set 18 Unreal client rather
+  than a new field contract.
 
 ### Question
 
@@ -132,6 +136,7 @@ alternative field we should read in the meantime?
 
 ## 올릴 때 확인할 것
 
-- 올리기 전에 **최신 이슈 목록을 한 번 더 검색**해라 (`total_damage_to_players`, `players_eliminated`) — 9/12 이후 누가 먼저 올렸을 수 있다.
+- **2026-09-12 에 검색해 둔 결과**: `total_damage_to_players` 로 걸리는 이슈는 **#1171**(Open, PBE·units 누락이 주 내용)과 **#253**(2023-08, 같은 두 필드가 0 → `closed: is working` 으로 닫힘) 둘뿐이다. **세트 18 라이브에서 전수 0 이라는 것을 짚은 열린 이슈는 없다.** 그래도 올리기 직전에 한 번 더 검색해라 — 그 사이 누가 먼저 올렸을 수 있다.
+- #253 이 "is working" 으로 닫힌 건 그때는 고쳐졌다는 뜻이다. **재발**로 읽히게 본문 Related 에 넣어 뒀다.
 - `puuid` 는 본문에 안 넣었다. 매치 ID(`KR_8376484567`)는 공개 식별자라 그대로 둬도 된다.
 - 우리 쪽 대응은 이미 끝났다 — 그 경기 전원이 0이면 화면에서 딜량을 숨기고, 값이 돌아오면 배포 없이 자동 복구된다 (`dogu_tft` `a5461f2`).
