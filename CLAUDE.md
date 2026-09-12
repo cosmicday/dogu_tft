@@ -23,6 +23,22 @@
 - `.env` (gitignore 대상)
 - 푸터의 Riot Games 권리 고지 문구 (`app.js` `mountDoguUI()` 의 `notice`)
 
+## ★ DB 스크립트를 쓸 땐 dbName 을 반드시 넘길 것 (2026-09-12)
+
+`.env` 의 `MONGO_URI` 에는 **DB 이름이 없다** (`mongodb+srv://…/?appName=Cluster0`).
+앱은 `server/db.js` 가 `dbName: process.env.MONGO_DB_NAME || dogu_tft` 를 넘겨서 제대로 붙지만,
+**임시 조사 스크립트에서 이걸 빠뜨리면 기본값 `test` 로 붙는다 — 거기는 pixlol.kr 의 프로덕션 DB 다**
+(`matchstats` 6만 · `champbuilds` 26만 · `summonercaches` 3만). 같은 Atlas 클러스터를 나눠 쓰고 있어서다.
+
+실제로 9/12 에 딜량 조사 스크립트가 이렇게 붙어서 롤 매치 20건을 TFT 데이터로 착각할 뻔했다
+(`baronKills`·`championName` 이 보여서 알아챘다). **읽기였으니 망정이지 쓰기였으면 pixlol 데이터를 건드렸다.**
+
+```js
+await mongoose.connect(uri, { dbName: process.env.MONGO_DB_NAME || dogu_tft });
+```
+
+붙은 뒤 `mongoose.connection.db.databaseName` 을 한 번 찍어 확인하는 습관을 들일 것.
+
 ## 작업 규칙
 
 - 파일을 고치기 전에 먼저 읽고 설명해줘. 내가 납득한 뒤에 수정
