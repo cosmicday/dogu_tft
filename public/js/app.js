@@ -210,6 +210,25 @@
             '</div>';
     }
 
+    // 펼침 안 아이템 이름 행 (m-8) — 아이콘 title 은 터치 기기에서 안 뜬다.
+    // 이름은 이미 받아 둔 /api/static(CDragon) 룩업에서만 가져온다. 새 요청 없음
+    function detailItemsHtml(me) {
+        var rows = (me.units || []).map(function (u) {
+            var names = (u.items || []).map(function (n) {
+                var it = tft.item(n);
+                return it ? it.name : n;   // 룩업에 없으면 원본 코드 (unitHtml 툴팁과 같은 폴백)
+            });
+            if (!names.length) return '';
+            var c = tft.champ(u.id);
+            var uname = c ? c.name : u.id.replace(/^TFT\d*_/, '');
+            return '<li class="ditem-row"><span class="ditem-unit">' + esc(uname) + '</span>' +
+                '<span class="ditem-names">' + esc(names.join(' · ')) + '</span></li>';
+        }).join('');
+        if (!rows) return '';
+        return '<div class="detail-items"><div class="detail-items-title">장착 아이템</div>' +
+            '<ul class="ditem-list">' + rows + '</ul></div>';
+    }
+
     function matchDetailHtml(entry) {
         var rows = entry.participants.map(function (p) {
             var nameCell = p.name
@@ -227,7 +246,8 @@
         }).join('');
 
         // 공통 스크롤 래퍼 — 펼칠 때 DoguUI.scrollHint 를 불러 오른쪽 페이드를 붙인다 (S-2, DOGU_UI.md 15-1)
-        return '<p class="dogu-scroll-hint">옆으로 밀어 더 볼 수 있습니다</p>' +
+        return detailItemsHtml(entry.me) +
+            '<p class="dogu-scroll-hint">옆으로 밀어 더 볼 수 있습니다</p>' +
             '<div class="dogu-scroll-wrap"><table class="detail-table">' +
             '<thead><tr><th>순위</th><th>소환사</th><th class="num">레벨</th><th class="num">라운드</th><th class="num">딜량</th><th>덱</th></tr></thead>' +
             '<tbody>' + rows + '</tbody></table></div>';

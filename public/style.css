@@ -136,8 +136,6 @@ main {
     font-weight: 700;
 }
 
-.text-link:hover { text-decoration: underline; }
-
 /* (.loading .empty — 2026-09-11 공통 DoguUI.skelRowsHtml / emptyHtml 로 갈아탔다. .skel-box 는 16절) */
 
 /* =========================================
@@ -163,12 +161,7 @@ main {
     transition: transform 0.2s ease, border-color var(--dogu-ease);
 }
 
-.card:hover {
-    transform: translateY(-3px);
-    border-color: var(--accent);
-}
-
-.card-title { font-size: 15px; font-weight: 800; margin-bottom: 6px; }
+.card-title { font-size: 15px; font-weight: 800; margin-bottom: 8px; }
 .card-desc { font-size: 13px; color: var(--text-dim); }
 
 .detail-head {
@@ -176,7 +169,7 @@ main {
     align-items: center;
     gap: 12px;
     flex-wrap: wrap;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
 }
 
 .fav-btn {
@@ -254,13 +247,12 @@ main {
 .suggest-row {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     padding: 10px 16px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .suggest-row:last-child { border-bottom: 0; }
-.suggest-row:hover { background: var(--surface-2); }
 
 .suggest-icon {
     width: 28px;
@@ -294,6 +286,7 @@ main {
 .profile-card {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;   /* 폰: 이름 + 전적 갱신 버튼이 한 줄에 안 들어가 레이아웃 뷰포트가 404 로 늘어났다 (E-1) */
     gap: 16px;
     background: var(--surface);
     border: 1px solid var(--border);
@@ -311,9 +304,13 @@ main {
     flex: none;
 }
 
+.profile-info { flex: 1; min-width: 0; }
+
 .profile-name {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
+    overflow-wrap: anywhere;   /* 띄어쓰기 없는 긴 소환사명이 카드를 밀지 않게 */
     gap: 8px;
     font-size: 24px;
     font-weight: 800;
@@ -333,7 +330,7 @@ main {
 }
 
 .profile-meta {
-    margin-top: 6px;
+    margin-top: 8px;
     color: var(--text-dim);
     font-size: 13px;
 }
@@ -401,7 +398,7 @@ main {
 /* =========================================
    11. TFT — 매치 리스트
    ========================================= */
-.match-block { margin-bottom: 10px; }
+.match-block { margin-bottom: 8px; }
 
 .match-row {
     display: flex;
@@ -439,7 +436,7 @@ main {
 .match-augments {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     flex-wrap: wrap;
     margin-bottom: 8px;
 }
@@ -461,7 +458,7 @@ main {
 
 .match-traits {
     display: flex;
-    gap: 6px;
+    gap: 8px;
     flex-wrap: wrap;
     margin-bottom: 8px;
 }
@@ -473,7 +470,7 @@ main {
     font-size: 12px;
     font-weight: 700;
     border-radius: var(--dogu-r-pill);
-    padding: 2px 9px 2px 5px;
+    padding: 2px 8px 2px 4px;
     border: 1px solid transparent;
 }
 
@@ -583,10 +580,42 @@ main {
     border: 1px solid var(--border);
     border-top: 0;
     border-radius: 0 0 var(--radius) var(--radius);
-    padding: 6px 10px;
+    padding: 8px 12px;
 }
 
 /* (.detail-scroll — 2026-09-11 공통 .dogu-scroll-wrap + DoguUI.scrollHint 로 갈아탔다) */
+
+/* 펼침 안 아이템 이름 행 (m-8) — 유닛 아이콘 위 title 툴팁은 터치 기기에서 안 뜬다.
+   이름은 app.js 가 이미 받아 둔 /api/static 룩업에서 채운다 */
+.detail-items {
+    padding-bottom: 8px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+}
+
+.detail-items-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-faint);
+    margin-bottom: 8px;
+}
+
+.ditem-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 24px;
+    list-style: none;
+}
+
+.ditem-row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 12px;
+}
+
+.ditem-unit { font-weight: 700; white-space: nowrap; }
+.ditem-names { color: var(--text-dim); }
 
 .detail-table, .rank-table {
     width: 100%;
@@ -626,7 +655,6 @@ main {
 .detail-place.pl-bottom { color: var(--text-faint); }
 
 .detail-name { font-weight: 700; }
-.detail-name:hover { color: var(--accent); }
 .detail-name-unknown { color: var(--text-faint); }
 
 .detail-num { color: var(--text-dim); font-variant-numeric: tabular-nums; }
@@ -634,6 +662,7 @@ main {
 .detail-table th.num, .rank-table th.num, .detail-num { text-align: right; }
 
 .detail-table .unit { width: 30px; }
+.detail-table .match-units { flex-wrap: nowrap; }   /* 폰: 좁은 셀에서 덱이 여러 줄로 접혀 행이 300px 넘게 커졌다 — 가로 스크롤(.dogu-scroll-wrap)에 맡긴다 (E-2) */
 .detail-table .unit-icon { width: 30px; height: 30px; border-radius: var(--dogu-r-badge); border-width: 1.5px; }
 .detail-table .unit-stars { display: none; }
 .detail-table .unit-items { display: none; }
@@ -694,9 +723,8 @@ main {
     overflow: hidden;
 }
 
-.rank-no { color: var(--text-faint); font-weight: 800; width: 52px; }
+.rank-no { color: var(--text-faint); font-weight: 800; width: 52px; font-variant-numeric: tabular-nums; }
 .rank-name { font-weight: 700; }
-.rank-name:hover { color: var(--accent); }
 .rank-name-pending { color: var(--text-faint); font-style: italic; }
 
 .tier-text { font-size: 12px; font-weight: 700; }   /* 배지 규격(채움)이 아니라 색글자 — 이름을 사실대로 (m-4). 굵기 800 → 700 */
@@ -736,26 +764,26 @@ main {
 
     .match-row {
         flex-wrap: wrap;
-        gap: 10px;
-        padding: 12px 14px;
+        gap: 12px;
+        padding: 12px 16px;
     }
 
     .match-left {
         width: auto;
         display: flex;
         align-items: baseline;
-        gap: 10px;
+        gap: 12px;
     }
 
     .match-main { flex-basis: 100%; order: 3; }
     .match-right {
         margin-left: auto;
         display: flex;
-        gap: 10px;
+        gap: 12px;
         align-items: baseline;
     }
 
-    .stats-strip { gap: 12px; padding: 12px 14px; }
+    .stats-strip { gap: 12px; padding: 12px 16px; }
     .rank-filter { height: 34px; }   /* 칩은 폰에서 34 (14-3) */
     .pager-btn { height: 40px; min-width: 40px; }   /* 터치 표적 (m-7) */
     .rank-find { font-size: 16px; }   /* 폰 입력 16 (13절 예외) */
@@ -827,7 +855,7 @@ main {
     font-weight: 400;
     font-size: 12px;
     color: var(--text-faint);
-    margin-left: 6px;
+    margin-left: 8px;
 }
 
 .pg-scroll { overflow-x: auto; }
@@ -930,7 +958,7 @@ main {
 .panel-head {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     padding: 12px 18px;
     border-bottom: 1px solid var(--border);
 }
@@ -975,7 +1003,7 @@ main {
     padding: var(--dogu-card-pad);
 }
 
-.rank-card-title { display: block; font-size: 15px; font-weight: 800; margin-bottom: 10px; }
+.rank-card-title { display: block; font-size: 15px; font-weight: 800; margin-bottom: 12px; }
 
 .rank-find {
     width: 100%;
@@ -1059,6 +1087,10 @@ main {
 .rank-find:focus-visible { outline-offset: 0; }
 
 @media (hover: hover) {
+    .text-link:hover { text-decoration: underline; }
+    .card:hover { transform: translateY(-3px); border-color: var(--accent); }
+    .suggest-row:hover { background: var(--surface-2); }
+    .detail-name:hover, .rank-name:hover { color: var(--accent); }
     .rank-filter:hover, .fav-btn:hover, .more-btn:hover:not(:disabled), .pager-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--text); }
     .rank-filter.active:hover, .pager-btn.active:hover { color: var(--ink-on-accent); }
     .refresh-btn:hover:not(:disabled) { background: var(--accent); }
@@ -1069,6 +1101,13 @@ main {
 }
 
 .rank-filter:active, .fav-btn:active, .more-btn:active:not(:disabled), .pager-btn:active:not(:disabled), .refresh-btn:active:not(:disabled) { transform: translateY(1px); }
+
+/* 폰: 「전적 갱신」을 이름 아래 한 줄로 내린다 — 같은 줄에 두면 프로필 카드 최소폭이 403 이 돼
+   레이아웃 뷰포트가 404 로 늘어나고 소환사명이 한 글자씩 접힌다 (E-1).
+   .refresh-btn 의 flex:none 보다 뒤에 와야 먹는다 */
+@media (max-width: 768px) {
+    .refresh-btn { flex: 1 0 100%; margin-left: 0; }
+}
 
 @media (max-width: 900px) {
     .home-grid { grid-template-columns: minmax(0, 1fr); }      /* 1fr 은 minmax(auto,1fr) 이라 표 min-width 가 열을 밀어 뷰포트가 536 으로 늘었다 */
