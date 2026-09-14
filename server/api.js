@@ -247,37 +247,10 @@ async function resolveNamesInBackground() {
 //   덱(조합) 티어까지는 표본이 모자라므로 유닛/시너지/아이템 단위만 낸다.
 // ------------------------------------------------------------
 let metaStats = null;      // { updatedAt, sample, setNumber, units, traits, items }
-let crawlCursor = 0;
-
-async function crawlRankedMatches() {
-    if (isPaused() || !isDbReady() || rankingPlayers.length === 0) return;
-
-    const pool = rankingPlayers.slice(0, 300).filter(p => p.puuid);
-    if (!pool.length) return;
-    const target = pool[crawlCursor % pool.length];
-    crawlCursor++;
-
-    try {
-        const ids = await api.matchIdsByPuuid(target.puuid, 0, 5);
-        const known = await MatchCache.find({ matchId: { $in: ids } }, { matchId: 1 }).lean();
-        const knownSet = new Set(known.map(d => d.matchId));
-        const toFetch = ids.filter(id => !knownSet.has(id));
-
-        let added = 0;
-        for (const id of toFetch) {
-            if (isPaused()) break;
-            try {
-                const detail = await api.matchById(id);
-                await MatchCache.create({ matchId: id, detail }).catch(() => { });
-                added++;
-            } catch (e) {
-                if (e.status === 429) break;
-            }
-            await sleep(2000);
-        }
-        if (added > 0) console.log(`[Task] 메타 수집: 매치 ${added}개 추가 (${target.tier} ${target.lp}LP 랭커)`);
-    } catch (e) { /* 다음 사이클에 다른 랭커로 재시도 */ }
-}
+// ★★★ 2026-09-14 — 랭커 매치 수집(crawlRankedMatches)을 통째로 제거했다 (사용자 지시).
+//   전날 하루 만에 matchcaches 가 16,434판 · 331MB 로 불어 같은 Atlas M0(512MB) 를 쓰는
+//   pixlol 까지 쓰기가 잠겼다. 되살리려면 git 에서 이 자리를 꺼낸다.
+//   ★ 진짜 범인은 크롤러가 아니라 아래 getMatchDetails 의 캐시 저장이었다 — 둘 다 꺼다 (DB 에 쌓는 것이 0 이다).
 
 async function refreshMetaStats() {
     if (!isDbReady()) return;
@@ -388,7 +361,8 @@ async function getMatchDetails(matchIds) {
         try {
             await sleep(index * 150);   // 동시 폭주 방지 스태거 (pixlol 패턴)
             const detail = await api.matchById(matchId);
-            if (isDbReady()) MatchCache.create({ matchId, detail }).catch(() => { });
+            // ★★ 경기 상세를 DB 에 쌓지 않는다 (2026-09-14). 판당 ~20KB 라 검색 트래픽이
+            //   붙은 하루에 331MB 를 먹었고 클러스터(512MB, pixlol 과 공용)가 통째로 잠겼다.
             return detail;
         } catch (err) {
             if (err.status === 429) throw err;   // 한도 초과는 위로 올려 폴백 태운다
@@ -736,18 +710,12 @@ async function startRiotJobs() {
     setInterval(updateRanking, 10 * 60 * 1000);
     setInterval(resolveNamesInBackground, 90 * 1000);
 
-    // 메타 통계: 수집은 5분 주기(사이클당 최대 6콜), 집계는 30분 주기
+    // 메타 통계 집계는 30분 주기로 남겨 둔다. 단 수집을 꺼서 matchcaches 가 안 차므로
+    //   표본이 0 이고 /api/stats 는 { building: true } 를 돌려준다.
+    //   수집을 되살리면 이 집계도 그대로 살아난다.
     refreshMetaStats();
     setInterval(refreshMetaStats, 30 * 60 * 1000);
-    // ★★ 랭커 매치 수집은 **기본 꺼짐**이다 (2026-09-11 사용자 결정). 켜려면 `TFT_CRAWL=1`.
-    //   pixlol 과 같은 Atlas M0(512MB) 를 나눠 쓰는데, 이 수집이 30일 TTL 인덱스 없이 한 달 동안
-    //   2,300판 · 48MB 를 쌓아 클러스터 전체가 잠기는 데 한몫했다. 그날 데이터도 통째로 비웠다.
-    if (process.env.TFT_CRAWL === '1') {
-        setInterval(crawlRankedMatches, 5 * 60 * 1000);
-        setTimeout(crawlRankedMatches, 30 * 1000);   // 첫 수집은 부팅 30초 뒤
-    } else {
-        console.log('[Task] 랭커 매치 수집은 꺼져 있다 (TFT_CRAWL=1 로 켠다)');
-    }
+    // 랭커 매치 수집은 2026-09-14 에 제거했다 (위 주석 참고). TFT_CRAWL 변수도 이제 안 본다.
 }
 
 module.exports = { router, startRiotJobs };

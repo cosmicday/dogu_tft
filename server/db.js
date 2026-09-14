@@ -22,7 +22,7 @@ mongoose.connection.on('reconnected', () => console.log('[System] MongoDB 재연
 const matchCacheSchema = new mongoose.Schema({
     matchId: { type: String, required: true, unique: true },
     detail: { type: Object, required: true },
-    createdAt: { type: Date, expires: '30d', default: Date.now }
+    createdAt: { type: Date, expires: '3d', default: Date.now }   // 2026-09-14: 30d → 3d
 });
 
 // 429 폴백용: puuid로 저장된 매치를 최신순으로 긁는다
@@ -82,14 +82,18 @@ async function connectMongo() {
             dbName: process.env.MONGO_DB_NAME || 'dogu_tft'
         });
         console.log(`[System] MongoDB 연결 성공 (db: ${process.env.MONGO_DB_NAME || 'dogu_tft'})`);
-        // ★★ 스키마의 `expires: '30d'` 는 **인덱스가 실제로 있어야** 돈다 (2026-09-11 실측: 한 달 동안 TTL 인덱스가
+        // ★★ 스키마의 `expires` 는 **인덱스가 실제로 있어야** 돈다 (2026-09-11 실측: 한 달 동안 TTL 인덱스가
         //   없어서 matchcaches 가 한 건도 안 지워졌다 — pixlol 이 8/16 에 겪은 함정과 같다). 부팅 때 직접 확인해 만든다.
         try {
             const col = mongoose.connection.db.collection('matchcaches');
-            const has = (await col.indexes().catch(() => [])).some(i => i.key && i.key.createdAt === 1 && i.expireAfterSeconds != null);
+            //  ★ 30일짜리 였던 인덱스가 이미 있으면 지우고 다시 만든다 (M0 는 collMod 권한이 없다).
+            const idxs = await col.indexes().catch(() => []);
+            const cur = idxs.find(i => i.key && i.key.createdAt === 1 && i.expireAfterSeconds != null);
+            if (cur && cur.expireAfterSeconds !== 3 * 86400) { await col.dropIndex(cur.name).catch(() => { }); }
+            const has = cur && cur.expireAfterSeconds === 3 * 86400;
             if (!has) {
-                await col.createIndex({ createdAt: 1 }, { expireAfterSeconds: 30 * 86400 });
-                console.log('[System] matchcaches TTL 인덱스(30일) 생성');
+                await col.createIndex({ createdAt: 1 }, { expireAfterSeconds: 3 * 86400 });
+                console.log('[System] matchcaches TTL 인덱스(3일) 생성');
             }
         } catch (e) {
             console.warn('[System] matchcaches TTL 인덱스 확인 실패:', e.message);
