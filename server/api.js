@@ -429,24 +429,21 @@ function buildHistoryEntry(detail, puuid) {
     };
 }
 
-// 같은 게임 참가자 닉네임을 자동완성 후보로 축적 (pixlol saveParticipantNames)
+// 같은 게임 참가자 닉네임을 랭킹 표시용으로 **메모리에만** 받아 둔다.
+//   ★★★ 2026-09-14 — 예전엔 이걸 SummonerCache 에 upsert 했는데, 한 판에 8명이라
+//   검색 한 번에 수백 명이 들어왔다. TTL 도 없어서 사흘 만에 62,654명 · 15.9MB 가 됐고
+//   그중 **94.4%(59,139명)가 경기 상대 참가자**였다. 시간당 9,770명 = 하루 58MB 속도라
+//   여유 331MB 를 엿새면 도로 채울 판이었다 (matchcaches 와 같은 부류).
+//   ★ DB 에 남기는 건 **랭커 명단과 실제로 검색된 사람**뿐이다 (수가 정해져 있다).
+//   그만큼 자동완성 후보가 줄지만, 경기 상세에 이름이 이미 들어 있어 화면은 그대로다.
 function saveParticipantNames(details, excludePuuid) {
-    if (!isDbReady()) return;
     const now = Date.now();
-    const seen = new Map();
     for (const detail of details) {
         for (const p of detail?.info?.participants || []) {
             if (p.puuid === excludePuuid || !p.riotIdGameName || !p.riotIdTagline) continue;
-            seen.set(p.puuid, `${p.riotIdGameName}#${p.riotIdTagline}`);
+            const name = `${p.riotIdGameName}#${p.riotIdTagline}`;
+            resolvedNames[p.puuid] = resolvedNames[p.puuid] || { displayName: name, updatedAt: now };
         }
-    }
-    for (const [puuid, name] of seen) {
-        resolvedNames[puuid] = resolvedNames[puuid] || { displayName: name, updatedAt: now };
-        SummonerCache.updateOne(
-            { puuid },
-            { $set: { displayName: name, updatedAt: now, ...toSearchFields(name) } },
-            { upsert: true }
-        ).catch(() => { });
     }
 }
 
