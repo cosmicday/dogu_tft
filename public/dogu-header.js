@@ -765,12 +765,11 @@
 
     global.DoguUI = DoguUI;
 
-    /* ---------- 배경 그림 층 높이 고정 (2026-09-18, pixlol 폰 크롬 「검색창 풀면 배경이 움찔」) ----------
-       폰 크롬은 키보드가 열릴 때 뷰포트(iOS 크롬은 WKWebView 프레임, 안드로이드는 레이아웃 뷰포트)를 줄였다 되돌리고,
-       그때 body::before 의 100lvh 가 같이 바뀌어 `cover` 가 그림을 다시 확대·축소한다 (사파리는 키보드가 뷰포트를 안 줄여서 무증상).
-       그래서 터치 기기에서는 큰 뷰포트 높이를 재서 px 로 못 박는다 (--dogu-bg-h + body.dogu-vh-fixed).
-       같은 폭에서 **줄어드는** 변화(키보드)는 무시, **커지는** 변화(주소창 숨김)는 받아들임, 폭이 바뀌면(회전) 다시 잰다.
-       데스크톱(hover 가능·정밀 포인터)은 창 높이를 줄이면 그림이 넘치므로 안 건다 — CSS 의 100lvh 그대로 */
+    /* ---------- 터치 기기: 배경 그림 층을 문서에 붙이고 높이를 px 로 고정 (2026-09-18, pixlol 폰 크롬 「배경이 움찔」) ----------
+       body.dogu-vh-fixed 가 붙으면 CSS 가 body::before 를 fixed → absolute 로 바꾼다 (주소창 접힘·키보드에 배경이 따라 움직이던 것 —
+       dogu-ui.css 의 그 규칙 주석 참고). 높이는 여기서 큰 뷰포트를 재서 --dogu-bg-h(px) 로 준다 — lvh 로 두면 키보드가 뷰포트를
+       줄이는 브라우저에서 cover 가 그림을 다시 확대·축소한다. 같은 폭에서 **줄어드는** 변화(키보드)는 무시, **커지는** 변화(주소창 숨김)는
+       받아들임, 폭이 바뀌면(회전) 다시 잰다. 데스크톱(hover 가능·정밀 포인터)은 안 건다 — fixed + 100lvh 그대로 */
     (function freezeBgHeight() {
         var mq = global.matchMedia && global.matchMedia('(hover: none) and (pointer: coarse)');
         if (!mq || !mq.matches) return;
