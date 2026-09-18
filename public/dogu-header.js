@@ -22,10 +22,13 @@
     var TEXT = {
         searching: '찾는 중…',
         noMatch: '일치하는 이름이 없습니다.',
-        favorites: '★ 즐겨찾기',
-        recents: '🕘 최근 검색',
+        /* 탭 아이콘은 글자·SVG 라 CSS 색이 든다 (이모지 🕘 는 색을 못 바꿨다 — 2026-09-18). 켜진 탭 색은 dogu-ui.css */
+        favorites: '<i class="dogu-dropdown-ico">★</i>즐겨찾기',
+        recents: '<i class="dogu-dropdown-ico"><svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><circle cx="8" cy="8" r="6.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 4.6V8l2.4 1.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></i>최근검색',
         hint: '각각 10개까지 저장됩니다.',
-        empty: '저장된 항목이 없습니다.',
+        /* 빈 목록 문구 — 사이트가 opts.search.emptyFavorites / emptyRecents 로 덮는다 (pixlol: 「…소환사가 없습니다」) */
+        emptyFavorites: '즐겨찾기가 비어 있습니다.',
+        emptyRecents: '최근 검색 기록이 없습니다.',
         searchIcon: '⌕',
         buttonLabel: '.GG',
         notFoundTitle: '404',
@@ -33,8 +36,9 @@
         comingTitle: '준비 중',
         comingBody: '아직 만드는 중인 페이지입니다. 조금만 기다려 주세요.',
         backHome: '← 홈으로 돌아가기',
-        copied: function (email) { return '이메일 주소(' + email + ')가 클립보드에 복사되었습니다.'; },
-        copyFailed: function (email) { return '복사에 실패했습니다. 직접 복사해 주세요: ' + email; }
+        /* 토스트는 { kind, title, body } 로 (2026-09-18 개편). 옛 사이트 notify 가 문자열을 기대할 수 있어 toString 을 붙인다 */
+        copied: function (email) { return toastMsg('ok', '이메일 주소를 복사했습니다', email); },
+        copyFailed: function (email) { return toastMsg('fail', '복사하지 못했습니다', '직접 복사해 주세요 · ' + email); }
     };
 
     function esc(s) {
@@ -237,6 +241,11 @@
 
         /* 자동완성 중에는 탭(즐겨찾기/최근)이 의미가 없어 숨긴다 */
         if (header) header.style.display = suggesting ? 'none' : '';
+        /* ★★ 탭 켜기는 목록을 그리기 **전에** — 예전엔 맨 끝에 있어서 「목록이 비어 있을 때」 return 에 걸려 안 켜졌다.
+           즐겨찾기가 비어 있는 폰에서 「최근검색 → 즐겨찾기」 를 누르면 색이 안 들던 것이 이것 (2026-09-18, 터치 문제가 아니었다) */
+        root.querySelectorAll('.dogu-dropdown-tab').forEach(function (t) {
+            t.classList.toggle('active', t.dataset.tab === dropdownState.tab);
+        });
 
         if (suggesting) {
             if (dropdownState.loading && !dropdownState.items) {
@@ -263,7 +272,8 @@
         var source = dropdownState.tab === 'favorites' ? s.favorites : s.recents;
         var items = (source && typeof source.all === 'function') ? source.all() : [];
         if (!items.length) {
-            listEl.innerHTML = '<div class="dogu-dropdown-empty">' + TEXT.empty + '</div>';
+            var emptyText = dropdownState.tab === 'favorites' ? (s.emptyFavorites || TEXT.emptyFavorites) : (s.emptyRecents || TEXT.emptyRecents);
+            listEl.innerHTML = '<div class="dogu-dropdown-empty">' + emptyText + '</div>';
             return;
         }
         var label = s.itemLabel || function (it) { return typeof it === 'string' ? it : it.label || it.nickname || it.name; };
@@ -277,9 +287,6 @@
                 '<button class="dogu-dropdown-del" type="button" data-dogu-del="' + esc(k) + '" title="삭제">✕</button>' +
             '</div>';
         }).join('');
-        root.querySelectorAll('.dogu-dropdown-tab').forEach(function (t) {
-            t.classList.toggle('active', t.dataset.tab === dropdownState.tab);
-        });
     }
 
     function bindHero(root, opts) {
@@ -304,16 +311,56 @@
             renderDropdownList();
             dropdown.classList.add('open');
         });
-        input.addEventListener('blur', function () { dropdown.classList.remove('open'); });
+        var tabTouchAt = 0;
+        dropdown.addEventListener('touchstart', function (e) { if (e.target.closest('.dogu-dropdown-tab')) tabTouchAt = Date.now(); }, { passive: true });
+        /* 검색창·드롭다운 밖을 누르면 닫는다 (2026-09-18 pixlol 요청). iOS 는 빈 곳을 눌러도 input 이 blur 되지 않을 때가 있어 blur 에만 기대지 않는다 */
+        var wrapper = root.querySelector('.dogu-search-wrapper') || dropdown;
+        var closeIfOutside = function (e) {
+            if (!dropdown.classList.contains('open')) return;
+            if (wrapper.contains(e.target)) return;
+            dropdown.classList.remove('open');
+            if (document.activeElement === input) input.blur();
+        };
+        document.addEventListener('pointerdown', closeIfOutside, true);
+        document.addEventListener('touchstart', closeIfOutside, { capture: true, passive: true });
+        input.addEventListener('blur', function () {
+            /* 탭을 누르는 중에 난 blur 는 무시 — 닫히면 다음 click 이 허공에 떨어진다 */
+            if (Date.now() - tabTouchAt < 600) return;
+            dropdown.classList.remove('open');
+        });
         dropdown.addEventListener('mousedown', function (e) { e.preventDefault(); });
+        /* ★ 터치(iOS)에서는 mousedown 보다 먼저 input 이 blur 되어 드롭다운이 닫히고, 그 뒤 click 이 허공에 떨어진다 —
+           「최근검색을 누른 뒤 즐겨찾기를 눌러도 색이 안 든다」가 그것 (2026-09-18 pixlol 실기기). 탭·삭제는 touchend 에서
+           바로 처리하고 preventDefault 로 포커스 이동(blur)과 합성 click 을 막는다. 링크는 그대로 click 으로 간다 */
+        /* 탭은 touchstart 에서 — touchend 까지 기다리면 그 사이 iOS 가 포커스를 옮겨 blur 가 먼저 날 때가 있다 (실기기 재보고 2026-09-18).
+           preventDefault 로 뒤따르는 mouse/click 을 다 끊고, 혹시 blur 가 났어도 되돌리게 input 을 다시 포커스한다 (제스처 안이라 허용) */
+        var switchTab = function (tab) {
+            dropdownState.tab = tab.dataset.tab;
+            renderDropdownList();
+            dropdown.classList.add('open');
+            if (document.activeElement !== input) { try { input.focus({ preventScroll: true }); } catch (e2) { input.focus(); } }
+        };
+        dropdown.addEventListener('touchstart', function (e) {
+            var tab = e.target.closest('.dogu-dropdown-tab');
+            if (!tab) return;
+            e.preventDefault();
+            switchTab(tab);
+        }, { passive: false });
+        dropdown.addEventListener('touchend', function (e) {
+            var tab = e.target.closest('.dogu-dropdown-tab');
+            if (tab) { e.preventDefault(); return; }   /* touchstart 가 이미 처리했다 — click 합성만 막는다 */
+            var del = e.target.closest('[data-dogu-del]');
+            if (del) {
+                e.preventDefault();
+                var source = dropdownState.tab === 'favorites' ? s.favorites : s.recents;
+                if (source && typeof source.remove === 'function') source.remove(del.dataset.doguDel);
+                renderDropdownList();
+            }
+        }, { passive: false });
 
         dropdown.addEventListener('click', function (e) {
             var tab = e.target.closest('.dogu-dropdown-tab');
-            if (tab) {
-                dropdownState.tab = tab.dataset.tab;
-                renderDropdownList();
-                return;
-            }
+            if (tab) { switchTab(tab); return; }
             var del = e.target.closest('[data-dogu-del]');
             if (del) {
                 var source = dropdownState.tab === 'favorites' ? s.favorites : s.recents;
@@ -408,18 +455,35 @@
 
     /* ---------- 토스트 (푸터 복사 안내용 최소 구현) ---------- */
     var toastTimer = null;
+    function toastMsg(kind, title, body) {
+        var m = { kind: kind, title: title, body: body || '' };
+        m.toString = function () { return body ? title + ' — ' + body : title; };
+        return m;
+    }
+    var TOAST_ICON = {
+        ok: '<svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M4.5 10.5l3.5 3.5 7.5-8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+        fail: '<svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M6 6l8 8M14 6l-8 8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>'
+    };
+    /* 토스트 — 아이콘 + 제목 + 부제 (2026-09-18 개편). message 는 문자열이거나 { kind, title, body }.
+       1.1초 뒤 사라진다 (전 2.2초 — pixlol 요청으로 절반). 색은 사이트가 --dogu-toast-* 로 덮는다 */
     function showToast(message) {
         var t = document.getElementById('dogu-toast');
         if (!t) {
             t = document.createElement('div');
             t.id = 'dogu-toast';
-            t.className = 'dogu-toast';
             document.body.appendChild(t);
         }
-        t.textContent = message;
+        var m = (message && typeof message === 'object') ? message : { kind: 'ok', title: String(message), body: '' };
+        t.className = 'dogu-toast is-' + (m.kind === 'fail' ? 'fail' : 'ok');
+        t.innerHTML = '<span class="dogu-toast-ico">' + (TOAST_ICON[m.kind] || TOAST_ICON.ok) + '</span>' +
+            '<span class="dogu-toast-text"><b class="dogu-toast-title">' + esc(m.title) + '</b>' +
+            (m.body ? '<em class="dogu-toast-body">' + esc(m.body) + '</em>' : '') + '</span>';
+        /* 다시 띄울 때 애니메이션이 처음부터 돌게 한 프레임 쉰다 */
+        t.classList.remove('show');
+        void t.offsetWidth;
         t.classList.add('show');
         clearTimeout(toastTimer);
-        toastTimer = setTimeout(function () { t.classList.remove('show'); }, 2200);
+        toastTimer = setTimeout(function () { t.classList.remove('show'); }, 1100);
     }
 
     /* 이메일을 클립보드에 복사하고 안내를 띄운다. 사이트가 자기 토스트를 쓰고 싶으면 opts.notify 로 넘긴다 */
@@ -454,7 +518,8 @@
                 }).join('') +
             '</div>' +
             notices.map(function (n) { return '<div class="dogu-footer-note">' + n + '</div>'; }).join('') +
-            (opts.contact ? '<div class="dogu-footer-note">Contact: ' + esc(opts.contact) + '</div>' : '') +
+            /* 주소를 누르면 클립보드 복사 (버그제보 링크와 같은 동작). mailto 가 아니라 자동 감지 밑줄도 안 생긴다 (2026-09-18) */
+            (opts.contact ? '<div class="dogu-footer-note">Contact: <button type="button" class="dogu-footer-contact" id="dogu-contact" title="누르면 복사">' + esc(opts.contact) + '</button></div>' : '') +
         '</div>';
     }
 
@@ -612,6 +677,8 @@
                     copyEmail(opts.contact || '', opts);
                 });
             }
+            var ct = footer.querySelector('#dogu-contact');
+            if (ct) ct.addEventListener('click', function () { copyEmail(opts.contact || '', opts); });
             /* extraLinks 의 onClick 을 id 로 찾아 건다 (href 만 있는 링크는 그냥 링크다) */
             [].concat(opts.extraLinks || []).forEach(function (l) {
                 if (!l.id || typeof l.onClick !== 'function') return;

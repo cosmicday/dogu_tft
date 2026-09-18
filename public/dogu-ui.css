@@ -644,10 +644,11 @@ body.dogu-body:not(.dogu-home) .dogu-hero { display: none; }
     right: 0;
     top: calc(100% + 12px);
     z-index: 20;
-    background: var(--dogu-card);
+    /* 색은 사이트가 --dogu-search-dd-bg / -head / -line / -border 로 덮는다 (pixlol 보라, 2026-09-18). 기본은 카드색 */
+    background: var(--dogu-search-dd-bg, var(--dogu-card));
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
-    border: 1px solid var(--dogu-line-2);
+    border: 1px solid var(--dogu-search-dd-border, var(--dogu-line-2));
     border-radius: var(--dogu-radius);
     overflow: hidden;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
@@ -657,14 +658,31 @@ body.dogu-body:not(.dogu-home) .dogu-hero { display: none; }
     display: flex;
     align-items: center;
     gap: 14px;
-    padding: 9px 14px;
-    border-bottom: 1px solid var(--dogu-line);
-    background: var(--dogu-card-2);
+    padding: 9px 14px 9px 11px;        /* 왼쪽 14 → 11 (2026-09-18, pixlol: 즐겨찾기 왼쪽 여백 20% 줄임) */
+    border-bottom: 1px solid var(--dogu-search-dd-line, var(--dogu-line));
+    background: var(--dogu-search-dd-head, var(--dogu-card-2));
 }
 .dogu-dropdown-tab { font-size: 13px; font-weight: 700; color: var(--dogu-text-3); cursor: pointer; }
-.dogu-dropdown-tab.active { color: var(--dogu-accent-strong); }
+/* 탭 둘 사이 세로 구분선 (2026-09-18, pixlol 요청). 둘 다 무채색이고 켜진 탭만 색이 든다 —
+   즐겨찾기는 별·글자 노랑, 최근 검색은 시계 액센트 + 글자 액센트(밝은쪽). 알약 배경은 안 쓴다 (사용자 결정) */
+.dogu-dropdown-tab { position: relative; transition: color 0.15s ease; }
+.dogu-dropdown-tab + .dogu-dropdown-tab::before {
+    content: '';
+    position: absolute;
+    left: -7px;
+    top: 50%;
+    height: 12px;
+    width: 1px;
+    background: var(--dogu-line-2);
+    transform: translateY(-50%);
+}
+.dogu-dropdown-ico { display: inline-block; margin-right: 5px; font-style: normal; vertical-align: -1px; line-height: 1; }
+.dogu-dropdown-ico svg { display: inline-block; vertical-align: -2px; }
+.dogu-dropdown-tab.active[data-tab="favorites"] { color: #f5c542; }
+.dogu-dropdown-tab.active[data-tab="recents"] { color: var(--dogu-accent-strong); }
+.dogu-dropdown-tab.active[data-tab="recents"] .dogu-dropdown-ico { color: var(--dogu-accent); }
 .dogu-dropdown-hint { margin-left: auto; font-size: 12px; color: var(--dogu-text-3); }
-.dogu-dropdown-row { display: flex; align-items: center; padding: 7px 14px; border-top: 1px solid var(--dogu-line); }
+.dogu-dropdown-row { display: flex; align-items: center; padding: 7px 14px; border-top: 1px solid var(--dogu-search-dd-line, var(--dogu-line)); }
 .dogu-dropdown-row:first-child { border-top: 0; }
 .dogu-dropdown-link { flex: 1; display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--dogu-text-2); cursor: pointer; }
 @media (hover: hover) {
@@ -714,39 +732,69 @@ body.dogu-body:not(.dogu-home) .dogu-hero { display: none; }
 }
 .dogu-footer-inner { padding: 26px 16px 40px; }
 .dogu-footer .dogu-brand { font-size: 20px; text-shadow: none; }
-.dogu-footer-links { display: flex; gap: 16px; margin: 12px 0 14px; flex-wrap: wrap; }
-/* 상하 패딩 8px — 글자만으론 16px 라 폰에서 누르기 어려웠다. 터치 영역 32px 확보 */
-.dogu-footer-links a { margin: 0; padding: 8px 0; font-size: 12px; font-weight: 700; color: var(--dogu-text-2); text-decoration: none; cursor: pointer; }   /* #a9bcd9 리터럴 → 토큰 (2026-09-11) */
+.dogu-footer-links { display: flex; gap: 0; margin: 12px 0 14px; flex-wrap: wrap; }
+/* 상하 패딩 8px — 글자만으론 16px 라 폰에서 누르기 어려웠다. 터치 영역 32px 확보.
+   ★ 링크 사이 세로 구분선 (2026-09-18, pixlol 요청) — gap 대신 좌우 패딩 14px 로 벌리고 둘째부터 왼쪽에 12px 짜리 선.
+     줄이 접히면(폰 좁은 폭) 첫 칸에 오는 링크에도 선이 남지만 12px 라 거슬리지 않는다 */
+.dogu-footer-links a { position: relative; margin: 0; padding: 8px 14px; font-size: 12px; font-weight: 700; color: var(--dogu-text-2); text-decoration: none; cursor: pointer; }   /* #a9bcd9 리터럴 → 토큰 (2026-09-11) */
+.dogu-footer-links a:first-child { padding-left: 0; }
+.dogu-footer-links a + a::before { content: ''; position: absolute; left: 0; top: 50%; height: 12px; width: 1px; background: var(--dogu-line-2); transform: translateY(-50%); }
 @media (hover: hover) {
     .dogu-footer-links a:hover { color: var(--dogu-accent-strong); }
 }
 /* 색은 변수로 — 하드코딩(#7288ac)이면 사이트가 --dogu-text-3 를 덮어도 여기만 안 따라온다 (er) */
 .dogu-footer-note { font-size: 12px; color: var(--dogu-text-3); line-height: 1.7; word-break: keep-all; margin-top: 4px; }
+/* 푸터 이메일 — 글자처럼 보이는 버튼. 누르면 복사 (2026-09-18) */
+.dogu-footer-contact { margin: 0; padding: 0; border: 0; background: transparent; appearance: none; -webkit-appearance: none; font: inherit; color: var(--dogu-text-2); cursor: pointer; }
+@media (hover: hover) { .dogu-footer-contact:hover { color: var(--dogu-accent-strong); } }
 
 /* 복사 안내 토스트 (값은 er .toast 그대로) */
 .dogu-toast {
     position: fixed;
     left: 50%;
-    top: 120px;
-    transform: translate(-50%, -14px);
-    padding: 12px 20px;
-    background: var(--dogu-card);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    border: 1px solid var(--dogu-line-2);
-    border-radius: var(--dogu-radius);
-    color: var(--dogu-text);
+    top: 96px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 18px 12px 14px;
+    /* 사이트가 --dogu-toast-bg / -line / -fg / -sub / -ico / -ico-bg 로 덮는다 (pixlol 은 보라 계열, 2026-09-18). 기본은 카드색 */
+    background: var(--dogu-toast-bg, var(--dogu-card));
+    backdrop-filter: blur(16px) saturate(1.2);
+    -webkit-backdrop-filter: blur(16px) saturate(1.2);
+    border: 1px solid var(--dogu-toast-line, var(--dogu-line-2));
+    border-radius: 14px;
+    color: var(--dogu-toast-fg, var(--dogu-text));
     font-family: var(--dogu-font);
     font-size: 13px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    line-height: 1.35;
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.06);
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.22s, transform 0.22s;
+    transform: translate(-50%, -10px) scale(0.96);
+    transition: opacity 0.18s ease, transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
     z-index: 1000;
-    max-width: min(92vw, 520px);
-    text-align: center;
+    /* ★ fixed + left:50% 은 「남은 오른쪽 절반」을 폭으로 잡아 제목이 두 줄로 꺾인다 — 내용 폭으로 */
+    width: max-content;
+    max-width: min(92vw, 420px);
+    text-align: left;
 }
-.dogu-toast.show { opacity: 1; transform: translate(-50%, 0); }
+.dogu-toast.show { opacity: 1; transform: translate(-50%, 0) scale(1); }
+/* 왼쪽 원형 아이콘 — 성공은 액센트, 실패는 빨강 */
+.dogu-toast-ico {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--dogu-toast-ico-bg, var(--dogu-accent-weak));
+    color: var(--dogu-toast-ico, var(--dogu-accent-strong));
+}
+.dogu-toast.is-fail .dogu-toast-ico { background: rgba(240, 104, 126, 0.16); color: #f0687e; }
+.dogu-toast-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.dogu-toast-title { font-size: 13px; font-weight: 700; }
+.dogu-toast-body { font-size: 12px; font-style: normal; font-weight: 400; color: var(--dogu-toast-sub, var(--dogu-text-3)); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ---------- 6b. 표 스크롤 힌트 · 빈 상태 · 스켈레톤 (2026-09-11, 취약점 P-2·P-3) ----------
    5사이트가 제각각 만들던 것을 한 벌로. 사이트는 클래스만 쓰고 색·치수는 여기 것. DOGU_UI.md 15절 */
