@@ -120,6 +120,11 @@ body.dogu-body::before {
     filter: blur(var(--dogu-bg-blur));
     pointer-events: none;
 }
+/* ★ 터치 기기에서는 dogu-header.js 가 큰 뷰포트 높이를 한 번 재서 px 로 못 박는다 (2026-09-18, pixlol 폰 크롬).
+   폰 크롬은 키보드가 열릴 때 뷰포트 자체를 줄였다 되돌려서 100lvh 도 따라 바뀌고, `cover` 가 그림을 다시
+   확대·축소해 검색창에 포커스했다 풀면 배경이 움찔한다. 키보드로 줄어드는 변화는 무시하고 폭이 바뀔 때(회전)만 다시 잰다.
+   데스크톱은 이 클래스가 안 붙어 위 100lvh 그대로다 */
+body.dogu-body.dogu-vh-fixed::before { height: var(--dogu-bg-h); }
 
 body.dogu-body::after {
     content: '';

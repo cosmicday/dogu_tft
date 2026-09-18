@@ -764,4 +764,37 @@
     };
 
     global.DoguUI = DoguUI;
+
+    /* ---------- 배경 그림 층 높이 고정 (2026-09-18, pixlol 폰 크롬 「검색창 풀면 배경이 움찔」) ----------
+       폰 크롬은 키보드가 열릴 때 뷰포트(iOS 크롬은 WKWebView 프레임, 안드로이드는 레이아웃 뷰포트)를 줄였다 되돌리고,
+       그때 body::before 의 100lvh 가 같이 바뀌어 `cover` 가 그림을 다시 확대·축소한다 (사파리는 키보드가 뷰포트를 안 줄여서 무증상).
+       그래서 터치 기기에서는 큰 뷰포트 높이를 재서 px 로 못 박는다 (--dogu-bg-h + body.dogu-vh-fixed).
+       같은 폭에서 **줄어드는** 변화(키보드)는 무시, **커지는** 변화(주소창 숨김)는 받아들임, 폭이 바뀌면(회전) 다시 잰다.
+       데스크톱(hover 가능·정밀 포인터)은 창 높이를 줄이면 그림이 넘치므로 안 건다 — CSS 의 100lvh 그대로 */
+    (function freezeBgHeight() {
+        var mq = global.matchMedia && global.matchMedia('(hover: none) and (pointer: coarse)');
+        if (!mq || !mq.matches) return;
+        var probe = null, lastW = 0, h = 0;
+        function measure() {
+            if (!probe) {
+                probe = document.createElement('div');
+                probe.setAttribute('aria-hidden', 'true');
+                /* lvh 를 모르는 브라우저는 둘째 줄이 버려져 vh 로 잰다 */
+                probe.style.cssText = 'position:fixed;top:0;left:0;width:0;height:100vh;height:100lvh;visibility:hidden;pointer-events:none;';
+                document.body.appendChild(probe);
+            }
+            return probe.offsetHeight || global.innerHeight;
+        }
+        function apply() {
+            if (!document.body) return;
+            var w = global.innerWidth, m = measure();
+            if (w !== lastW) { lastW = w; h = m; } else if (m > h) { h = m; }
+            document.documentElement.style.setProperty('--dogu-bg-h', h + 'px');
+            document.body.classList.add('dogu-vh-fixed');
+        }
+        if (document.body) apply(); else document.addEventListener('DOMContentLoaded', apply);
+        global.addEventListener('resize', apply);
+        /* 회전은 폭이 바뀌므로 apply 가 알아서 다시 잰다. 다만 크롬이 회전 직후 옛 높이를 줄 때가 있어 한 번 더 */
+        global.addEventListener('orientationchange', function () { setTimeout(apply, 300); });
+    })();
 })(window);
